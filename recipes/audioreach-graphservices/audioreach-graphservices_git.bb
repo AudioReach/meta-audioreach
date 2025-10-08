@@ -7,8 +7,6 @@ SRCREV = "810bd79e04d1b3e8d0a898fb649c07384f771b46"
 PV = "0.0+git"
 SRC_URI = "git://git@github.com/Audioreach/audioreach-graphservices.git;protocol=https;branch=master"
 
-S = "${WORKDIR}/git"
-
 DEPENDS = "glib-2.0"
 EXTRA_OECONF += "--with-syslog --with-glib --without-cutils --with-dummy_diag"
 
