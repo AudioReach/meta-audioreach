@@ -1,0 +1,47 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/siemens/kas/master/kas/schema-kas.json
+
+header:
+  version: 14
+
+distro: poky
+
+repos:
+  poky:
+    url: git://git.yoctoproject.org/poky
+    branch: master
+    layers:
+      meta:
+      meta-poky:
+      meta-yocto-bsp:
+
+  meta-raspberrypi:
+    url: git://git.yoctoproject.org/meta-raspberrypi
+    branch: master
+
+  meta-openembedded:
+    url: https://git.openembedded.org/meta-openembedded
+    branch: master
+    layers:
+      meta-oe:
+      meta-python:
+      meta-multimedia:
+      meta-networking:
+
+  meta-audioreach:
+    path: meta-audioreach
+
+local_conf_header:
+  are_support: |
+    PACKAGECONFIG:pn-audioreach-graphmgr = "are_on_apps use_default_acdb_path"
+    PACKAGECONFIG:pn-audioreach-graphservices = "are_on_apps"
+    IMAGE_INSTALL:append = "packagegroup-audioreach"
+  extra: |
+    EXTRA_IMAGE_FEATURES = "allow-empty-password empty-root-password allow-root-login"
+  license-accept:
+    LICENSE_FLAGS_ACCEPTED += "synaptics-killswitch"
+
+machine: raspberrypi4
+
+target: core-image-sato
+
+build_system: oe
