@@ -12,6 +12,7 @@ S = "${WORKDIR}/git"
 
 DEPENDS = "glib-2.0 tinyalsa audioreach-graphservices dbus audioreach-conf"
 EXTRA_OECONF += "--with-glib --with-syslog"
+CFLAGS += "-Wno-incompatible-pointer-types"
 SOLIBS = ".so"
 FILES_SOLIBSDEV = ""
 
