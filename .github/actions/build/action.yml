@@ -1,0 +1,152 @@
+---
+name: Build
+description: Build the project using a Docker container
+
+inputs:
+  docker_image:
+    description: Docker image to use for the build job
+    required: true
+
+  kas_file:
+    description: KAS file to use for the build job
+    required: true
+
+  build_command:
+    description: Command to run for the build
+    required: false
+    default: "bitbake core-image-base"
+
+  build_type:
+    description: Type of build to perform (flat_build or sdk_build)
+    required: false
+    default: "flat_build"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Build ${{ env.MACHINE }}
+      shell: bash
+      run: |
+        #!/bin/bash
+        set -e
+
+        # touch file_list.txt
+        filepath="${{ github.workspace }}/${{ env.MACHINE }}_${{ inputs.build_type }}file_list.txt"
+        echo "filepath=${filepath}" >> $GITHUB_ENV
+        touch $filepath
+
+        # Define variables
+        USER_ID=$(id -u)
+        GROUP_ID=$(id -g)
+        USER=$(whoami)
+        WORKSPACE=${{ github.workspace }}/..
+        USER_HOME="/home/$USER"
+        
+        echo "::group::$(printf '__________ %-100s' 'build' | tr ' ' _)"
+        docker run \
+          --rm \
+          --user $(id -u):$(id -g) \
+          -v ${WORKSPACE}:${USER_HOME}/workspace \
+          -w ${USER_HOME}/workspace \
+          --privileged \
+          ${{ inputs.docker_image }} \
+          bash -c "
+            set -e
+            kas shell meta-ar/ci/${{ inputs.kas_file }} -c '
+              umask 022
+              # Flat build or generate sdk build
+              ${{ inputs.build_command }}
+            '
+          "
+        echo "::endgroup::"
+
+    - name: Create tar archive for the build
+      if: ${{ inputs.build_type == 'flat_build' }}
+      shell: bash
+      run: |
+        #!/bin/bash
+        set -ex
+
+        # Process the kas file to remove the .yml extension
+        KAS_FILE="${{ inputs.kas_file }}"
+        KAS_FILE="${KAS_FILE%.yml}"
+
+        cd ..
+        MACHINE=${{ env.MACHINE }}
+        BUILD_DIR=build
+        PUB_DIR=${{ github.workspace }}/pub/${MACHINE}/flat_build
+        mkdir -p $PUB_DIR
+
+        if [[ $KAS_FILE =~ (qcs[0-9]+)-([^ -]*) ]]; then
+          qcs_number="${BASH_REMATCH[1]}"
+          remaining_part="${BASH_REMATCH[2]}"
+        else
+          echo "KAS_FILE does not match the expected pattern."
+          exit 1
+        fi
+
+        # if kas file is qcs6490-rb3gen2-core-kit, then we need to create two tar files
+        # one for core-kit and one for vision-kit
+        if [[ "${KAS_FILE}" == "qcs6490-rb3gen2-core-kit" ]]; then
+          # tar file for core-kit
+          cd $BUILD_DIR/tmp/deploy/images/${KAS_FILE}
+          cp core-image-base-${KAS_FILE}.rootfs.qcomflash.tar.gz "$PUB_DIR/core-image-base-${KAS_FILE}.rootfs.qcomflash.tar.gz"
+          cd -
+
+          # tar file for vision-kit
+          cd $BUILD_DIR/tmp/deploy/images/${KAS_FILE}/core-image-base-${KAS_FILE}.rootfs.qcomflash
+          cp dtb-${qcs_number}-${remaining_part}-image.vfat dtb.bin
+          cd ..
+          tar -czhf build-vision.tar.gz core-image-base-${KAS_FILE}.rootfs.qcomflash/
+          cp build-vision.tar.gz "$PUB_DIR/core-image-base-${KAS_FILE}-vision-kit.rootfs.qcomflash.tar.gz"
+
+          # create file file_list
+          echo "${PUB_DIR}/core-image-base-${KAS_FILE}.rootfs.qcomflash.tar.gz" >> ${{ env.filepath }}
+          echo "${PUB_DIR}/core-image-base-${KAS_FILE}-vision-kit.rootfs.qcomflash.tar.gz" >> ${{ env.filepath }}
+        else
+          # tar file for core-kit no vision-kit needed
+          cd $BUILD_DIR/tmp/deploy/images/${KAS_FILE}
+          cp core-image-base-${KAS_FILE}.rootfs.qcomflash.tar.gz "$PUB_DIR/core-image-base-${KAS_FILE}.rootfs.qcomflash.tar.gz"
+          
+          # create file file_list
+          echo "${PUB_DIR}/core-image-base-${KAS_FILE}.rootfs.qcomflash.tar.gz" >> ${{ env.filepath }}
+        fi
+        ls -larth $PUB_DIR
+        echo "Build artifacts created in $PUB_DIR"
+
+    - name: copy the sdk to the pub directory
+      if: ${{ inputs.build_type == 'sdk_build' }}
+      shell: bash
+      run: |
+        #!/bin/bash
+        set -ex
+
+        cd ..
+        cd build/tmp/deploy/sdk/
+        sdk_file=$(ls poky-glibc-*.sh)
+        PUB_DIR=${{ github.workspace }}/pub/${{ env.MACHINE }}/sdk_build
+        mkdir -p $PUB_DIR
+        cp $sdk_file $PUB_DIR
+        echo "${PUB_DIR}/${sdk_file}" >> ${{ env.filepath }}
+        ls -larth $PUB_DIR
+        echo "SDK artifacts created in $PUB_DIR"
+
+    - name: Upload artifacts
+      uses: Audioreach/meta-ar/.github/actions/aws-s3-exchanger@main
+      with:
+        mode: multi-upload
+        local_file: ${{ env.filepath }}
+        s3_bucket: qli-prd-audior-gh-artifacts
+      env:
+        MACHINE: ${{ env.MACHINE }}
+        BUILD_TYPE: ${{ inputs.build_type }}
+
+    - name: Update Summary
+      shell: bash
+      run: |
+        echo "## Build Summary for ${{ env.MACHINE }}" >> $GITHUB_STEP_SUMMARY
+        echo '### :rocket: Build Successful!' >> $GITHUB_STEP_SUMMARY
+        echo "- Machine: ${{ env.MACHINE }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Config File: ${{ inputs.kas_file }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Build Type: ${{ inputs.build_type }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Build Command: ${{ inputs.build_command }}" >> $GITHUB_STEP_SUMMARY
