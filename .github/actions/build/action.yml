@@ -52,7 +52,7 @@ runs:
           ${{ inputs.docker_image }} \
           bash -c "
             set -e
-            kas shell meta-ar/ci/${{ inputs.kas_file }} -c '
+            kas shell meta-audioreach/ci/${{ inputs.kas_file }} -c '
               umask 022
               # Flat build or generate sdk build
               ${{ inputs.build_command }}
@@ -132,7 +132,7 @@ runs:
         echo "SDK artifacts created in $PUB_DIR"
 
     - name: Upload artifacts
-      uses: Audioreach/meta-ar/.github/actions/aws-s3-exchanger@main
+      uses: Audioreach/meta-audioreach/.github/actions/aws-s3-exchanger@AR-to-AudioReach
       with:
         mode: multi-upload
         local_file: ${{ env.filepath }}

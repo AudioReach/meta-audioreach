@@ -2,9 +2,9 @@ name: Qualcomm Preflight Checks
 
 on:
   pull_request_target:
-    branches: [ master ]
+    branches: [ AR-to-AudioReach ]
   push:
-    branches: [ master ]
+    branches: [ AR-to-AudioReach ]
   workflow_dispatch:
 
 permissions:

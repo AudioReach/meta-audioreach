@@ -20,7 +20,7 @@ jobs:
     steps:
       - name: Sync Codebase
         id: sync
-        uses: Audioreach/meta-ar/.github/actions/sync@main
+        uses: Audioreach/meta-audioreach/.github/actions/sync@AR-to-AudioReach
         with:
           event_name: ${{ github.event_name }}
           pr_ref: ${{ github.event.pull_request.head.ref }}
@@ -29,7 +29,7 @@ jobs:
 
       - name: Process URLs
         id: process_urls
-        uses: Audioreach/meta-ar/.github/actions/process_urls@main
+        uses: Audioreach/meta-audioreach/.github/actions/process_urls@AR-to-AudioReach
         env:
           MACHINE: ${{ matrix.build_matrix.machine }}
           
