@@ -9,6 +9,7 @@ SRC_URI = "git://git@github.com/Audioreach/audioreach-graphservices.git;protocol
 
 DEPENDS = "glib-2.0"
 EXTRA_OECONF += "--with-syslog --with-glib --without-cutils --with-dummy_diag"
+CFLAGS += "-Wno-int-conversion"
 
 SOLIBS = ".so"
 FILES_SOLIBSDEV = ""
