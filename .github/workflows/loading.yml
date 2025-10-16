@@ -1,0 +1,38 @@
+---
+name: _loading
+description: Load required parameters for the subsequent jobs
+
+on:
+  workflow_call:
+    outputs:
+      build_matrix:
+        description: Build matrix
+        value: ${{ jobs.loading.outputs.build_matrix }}
+
+      docker_image:
+        description: Docker image
+        value: ${{ jobs.loading.outputs.docker_image }}
+
+      flat_build:
+        description: Command to run for the flat build
+        value: ${{ jobs.loading.outputs.flat_build }}
+      
+      sdk_build_command:
+        description: Command to run for the SDK build
+        value: ${{ jobs.loading.outputs.sdk_build_command }}
+
+jobs:
+  loading:
+    runs-on: ubuntu-latest
+    outputs:
+      build_matrix: ${{ steps.loading.outputs.build_matrix }}
+      docker_image: ${{ steps.loading.outputs.docker_image }}
+      flat_build: ${{ steps.loading.outputs.flat_build }}
+      sdk_build_command: ${{ steps.loading.outputs.sdk_build_command }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Load Parameters
+        id: loading
+        uses: Audioreach/meta-audioreach/.github/actions/loading@master

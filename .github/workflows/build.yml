@@ -1,0 +1,62 @@
+---
+name: _build
+on:
+  workflow_call:
+    inputs:
+      build_matrix:
+        required: true
+        type: string
+        description: Build matrix for the build job
+
+      build_command:
+        required: false
+        type: string
+        default: "bitbake core-image-base"
+        description: Command to run for the build
+
+      build_type:
+        required: false
+        type: string
+        default: "flat_build"
+        description: Type of build to perform (flat_build or sdk_build)
+
+jobs:
+  build:
+    runs-on:
+      group: GHA-Audioreach-SelfHosted-RG
+      labels: [ self-hosted, audior-prd-u2204-x64-large-od-ephem ]
+    strategy:
+      fail-fast: false
+      matrix:
+        build_matrix: ${{ fromJson(inputs.build_matrix) }}
+    steps:
+      - name: Build docker Image  # Build docker image used to build the project
+        id: get-docker-image
+        uses: Audioreach/meta-audioreach/.github/actions/build_docker_image@master
+
+      - name: Sync Codebase
+        id: sync
+        uses: Audioreach/meta-audioreach/.github/actions/sync@master
+        with:
+          event_name: ${{ github.event_name }}
+          pr_ref: ${{ github.event.pull_request.head.ref }}
+          pr_repo: ${{ github.event.pull_request.head.repo.full_name }}
+          base_ref: ${{ github.ref_name }}
+
+      - name: Build for ${{ matrix.build_matrix.machine }}
+        uses: Audioreach/meta-audioreach/.github/actions/build@master
+        with:
+          docker_image: ${{ steps.get-docker-image.outputs.image_name }}
+          kas_file: ${{ matrix.build_matrix.kas_file }}
+          build_command: ${{ inputs.build_command }}
+          build_type: ${{ inputs.build_type }}
+        env:
+          MACHINE: ${{ matrix.build_matrix.machine }}
+
+      - name: Cleanup Workspace
+        if: always()
+        run: |
+          # Cleanup the workspace
+          rm -rf ${{ github.workspace }}/../build
+          rm -rf pub
+          echo "Workspace cleaned up."

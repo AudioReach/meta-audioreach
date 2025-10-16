@@ -1,0 +1,70 @@
+---
+name: Process URLs
+description: Process presigned URLs to extract specific file URLs
+
+outputs:
+  filename:
+    description: The filename of the common tar.gz file
+    value: ${{ steps.process_urls.outputs.filename }}
+  flat_build_url:
+    description: Pre-signed URL for the common tar.gz file
+    value: ${{ steps.process_urls.outputs.flat_build_url }}
+
+runs:
+  using: "composite"
+  steps:
+    # Only download urls for flat_build ('flat_build' url is used in test job)
+    - name: Download Presigned URL list
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ env.MACHINE }}_flat_build_presigned_urls.json
+        path: ${{ github.workspace }}
+
+    # Extract the filename and url from the json file
+    - name: Process Presigned URLs
+      id: process_urls
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          const p = require('path');
+          // Helper function to find URL by filename
+          function findUrlByFilename(filename) {
+              for (const [path, url] of Object.entries(data)) {
+              if (path.endsWith(filename)) {
+                  return url;
+              }
+              }
+              return null;
+          }
+          const filePath = p.join(process.env.GITHUB_WORKSPACE, 'presigned_urls.json');
+          if (fs.existsSync(filePath)) {
+              console.log("File exists");
+          } else {
+              console.log("File does not exist");
+              core.setFailed(`File not found: ${filePath}`);
+          }
+          // Read the JSON file
+          let flat_build_url = "";
+          let flat_build_vision = "";
+          let script_file_url = "";
+          let filename= "";
+          const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+          // Find the URLs for the specific files
+          for (const [path, url] of Object.entries(data)) {
+              if (path.endsWith('.tar.gz')) {
+                  if (path.includes('vision')) {
+                      flat_build_vision = url; // Assign vision file URL
+                  } else {
+                      flat_build_url = url; // Assign common tar.gz file URL
+                      filename = path;
+                  }
+              } else if (path.endsWith('.sh')) {
+                  script_file_url = url; // Store .sh file URL if needed
+              }
+          }
+          // Set outputs for the URLs
+          core.setOutput('flat_build_vision', flat_build_vision);
+          core.setOutput('script_file_url', script_file_url);
+          core.setOutput('flat_build_url', flat_build_url);
+          core.setOutput('filename', filename);
