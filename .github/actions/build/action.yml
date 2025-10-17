@@ -80,9 +80,6 @@ runs:
         if [[ $KAS_FILE =~ (qcs[0-9]+)-([^ -]*) ]]; then
           qcs_number="${BASH_REMATCH[1]}"
           remaining_part="${BASH_REMATCH[2]}"
-        else
-          echo "KAS_FILE does not match the expected pattern."
-          exit 1
         fi
 
         # if kas file is qcs6490-rb3gen2-core-kit, then we need to create two tar files
