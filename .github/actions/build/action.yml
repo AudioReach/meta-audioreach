@@ -77,10 +77,8 @@ runs:
         PUB_DIR=${{ github.workspace }}/pub/${MACHINE}/flat_build
         mkdir -p $PUB_DIR
 
-        if [[ $KAS_FILE =~ (qcs[0-9]+)-([^ -]*) ]]; then
-          qcs_number="${BASH_REMATCH[1]}"
-          remaining_part="${BASH_REMATCH[2]}"
-        fi
+        qcs_number="${BASH_REMATCH[1]}"
+        remaining_part="${BASH_REMATCH[2]}"
 
         # if kas file is qcs6490-rb3gen2-core-kit, then we need to create two tar files
         # one for core-kit and one for vision-kit
