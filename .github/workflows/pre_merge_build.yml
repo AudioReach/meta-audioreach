@@ -1,0 +1,32 @@
+---
+name: pre_merge_build
+run-name: Pre Merge Build ${{ github.event.pull_request.number != '' && github.event.pull_request.number || '' }}
+on:
+  workflow_dispatch:
+  pull_request_target: # requiring access to base repo
+    types: [opened, synchronize, reopened]
+    branches:
+      - master
+    paths-ignore:
+      - '.github/**'
+
+jobs:
+  load_parameters:
+    uses: ./.github/workflows/loading.yml
+
+  flat_build:
+    needs: load_parameters
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
+    with:
+      build_matrix: ${{ needs.load_parameters.outputs.build_matrix }}
+      build_command: ${{ needs.load_parameters.outputs.flat_build }}
+      build_type: flat_build
+
+  tests:
+    needs: [load_parameters, flat_build]
+    if: ${{ (success() || failure()) && !contains(needs.flat_build.result, 'skipped') }}
+    uses: ./.github/workflows/test.yml
+    secrets: inherit
+    with:
+      build_matrix: ${{ needs.load_parameters.outputs.build_matrix }}
