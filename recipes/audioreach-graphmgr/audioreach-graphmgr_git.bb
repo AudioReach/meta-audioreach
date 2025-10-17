@@ -9,6 +9,7 @@ SRC_URI = "git://git@github.com/Audioreach/audioreach-graphmgr.git;protocol=http
 SRC_URI     += "file://agm_server.service"
 SRC_URI     += "file://agm-dbus.conf"
 
+
 DEPENDS = "glib-2.0 tinyalsa audioreach-graphservices dbus audioreach-conf"
 EXTRA_OECONF += "--with-glib --with-syslog"
 CFLAGS += "-Wno-incompatible-pointer-types"
