@@ -1,6 +1,6 @@
 ---
 name: Sync Action
-description: Checks out the correct code depending on event and repo context.
+description: Checks  out the correct code depending on event and repo context.
 
 inputs:
   event_name:
