@@ -77,40 +77,11 @@ runs:
         PUB_DIR=${{ github.workspace }}/pub/${MACHINE}/flat_build
         mkdir -p $PUB_DIR
 
-        if [[ $KAS_FILE =~ (qcs[0-9]+)-([^ -]*) ]]; then
-          qcs_number="${BASH_REMATCH[1]}"
-          remaining_part="${BASH_REMATCH[2]}"
-        else
-          echo "KAS_FILE does not match the expected pattern."
-          exit 1
-        fi
-
-        # if kas file is qcs6490-rb3gen2-core-kit, then we need to create two tar files
-        # one for core-kit and one for vision-kit
-        if [[ "${KAS_FILE}" == "qcs6490-rb3gen2-core-kit" ]]; then
-          # tar file for core-kit
-          cd $BUILD_DIR/tmp/deploy/images/${KAS_FILE}
-          cp core-image-base-${KAS_FILE}.rootfs.qcomflash.tar.gz "$PUB_DIR/core-image-base-${KAS_FILE}.rootfs.qcomflash.tar.gz"
-          cd -
-
-          # tar file for vision-kit
-          cd $BUILD_DIR/tmp/deploy/images/${KAS_FILE}/core-image-base-${KAS_FILE}.rootfs.qcomflash
-          cp dtb-${qcs_number}-${remaining_part}-image.vfat dtb.bin
-          cd ..
-          tar -czhf build-vision.tar.gz core-image-base-${KAS_FILE}.rootfs.qcomflash/
-          cp build-vision.tar.gz "$PUB_DIR/core-image-base-${KAS_FILE}-vision-kit.rootfs.qcomflash.tar.gz"
-
-          # create file file_list
-          echo "${PUB_DIR}/core-image-base-${KAS_FILE}.rootfs.qcomflash.tar.gz" >> ${{ env.filepath }}
-          echo "${PUB_DIR}/core-image-base-${KAS_FILE}-vision-kit.rootfs.qcomflash.tar.gz" >> ${{ env.filepath }}
-        else
-          # tar file for core-kit no vision-kit needed
-          cd $BUILD_DIR/tmp/deploy/images/${KAS_FILE}
-          cp core-image-base-${KAS_FILE}.rootfs.qcomflash.tar.gz "$PUB_DIR/core-image-base-${KAS_FILE}.rootfs.qcomflash.tar.gz"
+        cd $BUILD_DIR/tmp/deploy/images/${KAS_FILE}
+        cp core-image-base-${KAS_FILE}.rootfs.qcomflash.tar.gz "$PUB_DIR/core-image-base-${KAS_FILE}.rootfs.qcomflash.tar.gz"
           
-          # create file file_list
-          echo "${PUB_DIR}/core-image-base-${KAS_FILE}.rootfs.qcomflash.tar.gz" >> ${{ env.filepath }}
-        fi
+        # create file file_list
+        echo "${PUB_DIR}/core-image-base-${KAS_FILE}.rootfs.qcomflash.tar.gz" >> ${{ env.filepath }}
         ls -larth $PUB_DIR
         echo "Build artifacts created in $PUB_DIR"
 
