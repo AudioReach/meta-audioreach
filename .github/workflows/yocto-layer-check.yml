@@ -1,0 +1,38 @@
+name: Yocto Layer Sanity Check
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  yocto-layer-check:
+    name: Yocto Layer Sanity Check
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout Layer Repo
+        uses: actions/checkout@v3
+
+      - name: Install Yocto Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gawk wget git-core diffstat unzip texinfo gcc build-essential \
+            chrpath socat cpio python3 python3-pip python3-pexpect xz-utils debianutils iputils-ping \
+            python3-git python3-jinja2 libegl-mesa0 libsdl1.2-dev pylint
+
+      - name: Clone Poky and Meta-OpenEmbedded
+        run: |
+          cd ..
+          git clone https://git.yoctoproject.org/poky -b master
+          git clone https://git.openembedded.org/meta-openembedded
+
+      - name: Source Environment and Run Layer Check
+        run: |
+          cd ../poky
+          source oe-init-build-env build
+          export MACHINE=qemuarm64
+          yocto-check-layer ../../meta-ar --no-auto --dependency ../../meta-openembedded/meta-multimedia/ \
+            ../../meta-openembedded/meta-python/ ../../meta-openembedded/meta-oe --no-auto-dependency
