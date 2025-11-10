@@ -12,8 +12,9 @@ S = "${WORKDIR}/git"
 DEPENDS = "glib-2.0"
 EXTRA_OECONF += "--with-syslog --with-glib --without-cutils --with-dummy_diag"
 
-SOLIBS = ".so"
+SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""
+INSANE_SKIP:${PN} = "dev-so"
 
 PACKAGECONFIG[qcom] = "--with-qcom, --without-qcom, audioreach-kernel"
 PACKAGECONFIG[are_on_apps] = "--with-are-on-apps, --without-are-on-apps"
