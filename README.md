@@ -43,5 +43,20 @@ Select desired machine to build for and kick off compilation process for desired
 source setup-environment
 bitbake <target-image>
 ```
+
+## Maintainer(s)
+
+* Patrick Lai <plai@qti.qualcomm.com>
+* Aditya Rathi <aditrath@qti.qualcomm.com>
+* Suresh Kumar Reddy Vutukuru <svutukur@qti.qualcomm.com>
+
+## Contributing
+
+Contributions are welcome! Please read our [Contributing Guidelines](CONTRIBUTING.md) and [Code of Conduct](CODE-OF-CONDUCT.md) before submitting changes.
+
+#### Patch Submission:
+- Please submit patches via GitHub pull requests.
+- Ensure your patches follow the OpenEmbedded guidelines and include proper commit messages.
+
 ## License
 meta-audioreach is licensed under the MIT License. Check out the [LICENSE](LICENSE) for more details
