@@ -9,7 +9,7 @@ PV = "1.0+git${SRCPV}"
 
 SRC_URI = "git://github.com/Audioreach/audioreach-conf.git;protocol=https;branch=master"
 
-PACKAGECONFIG[qcom] = "--with-qcom, --without-qcom"
+EXTRA_OECONF:append:qcom = " --with-qcom"
 
 inherit autotools pkgconfig
 
