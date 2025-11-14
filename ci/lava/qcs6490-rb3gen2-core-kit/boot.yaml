@@ -57,7 +57,7 @@ job_name: boot test ({{DEVICE_TYPE}}) {{GITHUB_RUN_ID}}
 metadata:
   build-commit: '{{GITHUB_SHA}}'
 priority: 50
-tags:
+timeouts:
   job:
     minutes: 15
 visibility: public
