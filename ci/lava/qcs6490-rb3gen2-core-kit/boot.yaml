@@ -58,8 +58,6 @@ metadata:
   build-commit: '{{GITHUB_SHA}}'
 priority: 50
 tags:
-- cambridge-lab
-timeouts:
   job:
     minutes: 15
 visibility: public
