@@ -23,7 +23,7 @@ jobs:
             chrpath socat cpio python3 python3-pip python3-pexpect xz-utils debianutils iputils-ping \
             python3-git python3-jinja2 libegl-mesa0 libsdl1.2-dev pylint
 
-      - name: Clone Poky and Meta-OpenEmbedded
+      - name: Clone OpenEmbedded
         run: |
           cd ..
           git clone https://git.openembedded.org/bitbake
