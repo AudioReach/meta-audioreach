@@ -9,19 +9,26 @@ SRC_URI = "git://git@github.com/Audioreach/audioreach-graphmgr.git;protocol=http
 SRC_URI     += "file://agm_server.service"
 SRC_URI     += "file://agm-dbus.conf"
 
-DEPENDS = "glib-2.0 tinyalsa audioreach-graphservices dbus audioreach-conf"
+DEPENDS = "glib-2.0 tinyalsa audioreach-graphservices audioreach-conf"
+
+# Add dbus to DEPENDS only if --with-no-ipc is NOT in EXTRA_OECONF
+DEPENDS:append = "${@bb.utils.contains('EXTRA_OECONF', '--with-no-ipc', '', ' dbus', d)}"
+
 EXTRA_OECONF += "--with-glib --with-syslog"
+EXTRA_OECONF:append:qcom = " --with-no-ipc"
 SOLIBS = ".so"
 FILES_SOLIBSDEV = ""
 
 do_install:append () {
+    if ${@bb.utils.contains('EXTRA_OECONF', '--with-no-ipc', 'false', 'true', d)}; then
     install -m 0644 ${UNPACKDIR}/agm_server.service -D ${D}${sysconfdir}/systemd/system/agm_server.service
     install -d ${D}${sysconfdir}/systemd/system/multi-user.target.wants/
     ln -sf /etc/systemd/system/agm_server.service \
                       ${D}/etc/systemd/system/multi-user.target.wants/agm_server.service
     install -m 0644 ${UNPACKDIR}/agm-dbus.conf -D ${D}${sysconfdir}/dbus-1/system.d/agm-dbus.conf
+    fi
 }
-SYSTEMD_SERVICE:${PN} = "agm_server.service"
+SYSTEMD_SERVICE:${PN} = "${@bb.utils.contains('EXTRA_OECONF', '--with-no-ipc', '', 'agm_server.service', d)}"
 RM_WORK_EXCLUDE += "${PN}"
 
 PACKAGECONFIG[are_on_apps] = "--with-are-on-apps, --without-are-on-apps, audioreach-engine"
