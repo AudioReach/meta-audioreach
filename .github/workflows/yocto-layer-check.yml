@@ -2,9 +2,9 @@ name: Yocto Layer Sanity Check
 
 on:
   pull_request:
-    branches: [ main ]
+    branches: [ master ]
   push:
-    branches: [ main ]
+    branches: [ master ]
   workflow_dispatch:
 
 jobs:
@@ -26,12 +26,15 @@ jobs:
       - name: Clone Poky and Meta-OpenEmbedded
         run: |
           cd ..
-          git clone https://git.yoctoproject.org/poky -b master
+          git clone https://git.openembedded.org/bitbake
+          git clone https://git.yoctoproject.org/meta-yocto
+          git clone https://git.openembedded.org/openembedded-core
           git clone https://git.openembedded.org/meta-openembedded
+          
 
       - name: Source Environment and Run Layer Check
         run: |
-          cd ../poky
+          cd ../openembedded-core
           source oe-init-build-env build
           export MACHINE=qemuarm64
           yocto-check-layer ../../meta-ar --no-auto --dependency ../../meta-openembedded/meta-multimedia/ \
