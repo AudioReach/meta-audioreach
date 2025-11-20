@@ -3,7 +3,7 @@ SUMMARY = "AudioReach Graph Manager"
 LICENSE = "BSD-3-Clause-Clear"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=51110a366f598bc0b8f8e59141a18efb"
 
-SRCREV = "2365208a7a0910a805f20e83589ce28d58773761"
+SRCREV = "58952495d4213ef0431f13d9e70be60c0d4ab5e3"
 PV = "0.0+git"
 SRC_URI = "git://git@github.com/Audioreach/audioreach-graphmgr.git;protocol=https;branch=master"
 SRC_URI     += "file://agm_server.service"
