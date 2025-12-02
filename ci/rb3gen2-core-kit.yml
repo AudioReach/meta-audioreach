@@ -4,5 +4,6 @@ header:
   version: 14
   includes:
   - ci/base.yml
+  - ci/qcom-distro.yml
 
 machine: rb3gen2-core-kit

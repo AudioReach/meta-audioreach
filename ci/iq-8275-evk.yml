@@ -4,5 +4,6 @@ header:
   version: 14
   includes:
   - ci/base.yml
+  - ci/qcom-distro.yml
 
 machine: iq-8275-evk
