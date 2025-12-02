@@ -14,7 +14,7 @@ inputs:
   build_command:
     description: Command to run for the build
     required: false
-    default: "bitbake core-image-base"
+    default: "bitbake qcom-multimedia-image"
 
   build_type:
     description: Type of build to perform (flat_build or sdk_build)
@@ -78,10 +78,10 @@ runs:
         mkdir -p $PUB_DIR
 
         cd $BUILD_DIR/tmp/deploy/images/${KAS_FILE}
-        cp core-image-base-${KAS_FILE}.rootfs.qcomflash.tar.gz "$PUB_DIR/core-image-base-${KAS_FILE}.rootfs.qcomflash.tar.gz"
+        cp qcom-multimedia-image-${KAS_FILE}.rootfs.qcomflash.tar.gz "$PUB_DIR/"
           
         # create file file_list
-        echo "${PUB_DIR}/core-image-base-${KAS_FILE}.rootfs.qcomflash.tar.gz" >> ${{ env.filepath }}
+        echo "${PUB_DIR}/qcom-multimedia-image-${KAS_FILE}.rootfs.qcomflash.tar.gz" >> ${{ env.filepath }}
         ls -larth $PUB_DIR
         echo "Build artifacts created in $PUB_DIR"
 
@@ -94,7 +94,7 @@ runs:
 
         cd ..
         cd build/tmp/deploy/sdk/
-        sdk_file=$(ls poky-glibc-*.sh)
+        sdk_file=$(ls qcom-distro-*.sh)
         PUB_DIR=${{ github.workspace }}/pub/${{ env.MACHINE }}/sdk_build
         mkdir -p $PUB_DIR
         cp $sdk_file $PUB_DIR/sdk-${MACHINE}.sh
