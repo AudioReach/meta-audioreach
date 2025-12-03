@@ -92,7 +92,7 @@ runs:
 
         cd ..
         cd build/tmp/deploy/sdk/
-        sdk_file=$(ls poky-glibc-*.sh)
+        sdk_file=$(ls qcom-distro-*.sh)
         PUB_DIR=${{ github.workspace }}/pub/${{ env.MACHINE }}/sdk_build
         mkdir -p $PUB_DIR
         cp $sdk_file $PUB_DIR/sdk-${MACHINE}.sh
