@@ -56,8 +56,7 @@ runs:
           bash -c "
             set -ex
             umask 022
-            kas build meta-audioreach/ci/${{ inputs.kas_file }} '              
-            '
+            kas build meta-audioreach/ci/${{ inputs.kas_file }}
           "
         echo "::endgroup::"
 
