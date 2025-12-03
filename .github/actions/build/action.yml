@@ -51,11 +51,9 @@ runs:
           --privileged \
           ${{ inputs.docker_image }} \
           bash -c "
-            set -e
-            kas shell meta-audioreach/ci/${{ inputs.kas_file }} -c '
-              umask 022
-              # Flat build or generate sdk build
-              ${{ inputs.build_command }}
+            set -ex
+            umask 022
+            kas build meta-audioreach/ci/${{ inputs.kas_file }} -c '              
             '
           "
         echo "::endgroup::"
@@ -78,10 +76,10 @@ runs:
         mkdir -p $PUB_DIR
 
         cd $BUILD_DIR/tmp/deploy/images/${KAS_FILE}
-        cp core-image-base-${KAS_FILE}.rootfs.qcomflash.tar.gz "$PUB_DIR/core-image-base-${KAS_FILE}.rootfs.qcomflash.tar.gz"
+        cp qcom-multimedia-image-${KAS_FILE}.rootfs.qcomflash.tar.gz "$PUB_DIR/"
           
         # create file file_list
-        echo "${PUB_DIR}/core-image-base-${KAS_FILE}.rootfs.qcomflash.tar.gz" >> ${{ env.filepath }}
+        echo "${PUB_DIR}/qcom-multimedia-image-${KAS_FILE}.rootfs.qcomflash.tar.gz" >> ${{ env.filepath }}
         ls -larth $PUB_DIR
         echo "Build artifacts created in $PUB_DIR"
 
