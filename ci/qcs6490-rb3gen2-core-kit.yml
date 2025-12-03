@@ -6,4 +6,4 @@ header:
   - ci/base.yml
   - ci/qcom-distro.yml
 
-machine: qcs6490-rb3gen2-core-kit
+machine: rb3gen2-core-kit
