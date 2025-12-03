@@ -25,10 +25,6 @@ repos:
     url: https://git.yoctoproject.org/git/meta-virtualization
     branch: master
 
-  meta-audioreach:
-    url: https://github.com/AudioReach/meta-audioreach
-    branch: master
-
   meta-selinux:
     branch: master
     url: https://git.yoctoproject.org/meta-selinux
