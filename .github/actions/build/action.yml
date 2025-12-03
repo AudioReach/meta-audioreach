@@ -52,7 +52,7 @@ runs:
           ${{ inputs.docker_image }} \
           bash -c "
             set -e
-            kas shell meta-audioreach/ci/${{ inputs.kas_file }} -c '
+            kas shell meta-audioreach/ci/${{ inputs.kas_file }} '
               umask 022
               # Flat build or generate sdk build
               ${{ inputs.build_command }}
