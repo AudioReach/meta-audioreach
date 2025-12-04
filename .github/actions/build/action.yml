@@ -53,7 +53,7 @@ runs:
           --memory=96g \
           --ulimit nofile=1048576:1048576 \
           ${{ inputs.docker_image }} \
-          bash -c "
+          bash -c '
             set -ex
             umask 022
             cd meta-qcom
@@ -64,7 +64,7 @@ runs:
             else
               kas shell meta-audioreach/ci/${{ inputs.kas_file }} -t populate_sdk
             fi
-          "
+          '
         echo "::endgroup::"
 
     - name: Create tar archive for the build
