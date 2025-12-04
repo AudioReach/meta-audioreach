@@ -50,7 +50,7 @@ runs:
           -w ${USER_HOME}/workspace \
           --privileged \
           ${{ inputs.docker_image }} \
-          bash -c "
+          bash -c '
             set -ex
             umask 022
             cd meta-qcom
@@ -61,7 +61,7 @@ runs:
             else
               kas shell meta-audioreach/ci/${{ inputs.kas_file }} -t populate_sdk
             fi
-          "
+          '
         echo "::endgroup::"
 
     - name: Create tar archive for the build
