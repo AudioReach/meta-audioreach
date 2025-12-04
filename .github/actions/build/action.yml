@@ -56,7 +56,7 @@ runs:
             kas shell meta-audioreach/ci/${{ inputs.kas_file }} -c "
             set -euo pipefail
             set -x
-            cd meta-qcom
+            cd ../meta-qcom
             git fetch https://github.com/qualcomm-linux/meta-qcom 0a330a3148346f902e3d9588407a585002b26a75 && git cherry-pick FETCH_HEAD
             cd -
             "
