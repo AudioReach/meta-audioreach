@@ -58,6 +58,7 @@ runs:
             set -x
             cd ../meta-qcom
             git fetch https://github.com/qualcomm-linux/meta-qcom 0a330a3148346f902e3d9588407a585002b26a75 && git cherry-pick FETCH_HEAD
+            git reset HEAD^1
             cd -
             "
             if [ "${{ inputs.build_type }}" = "flat_build" ]; then
