@@ -14,7 +14,7 @@ inputs:
   build_command:
     description: Command to run for the build
     required: false
-    default: "bitbake core-image-base"
+    default: "bitbake qcom-multimedia-image"
 
   build_type:
     description: Type of build to perform (flat_build or sdk_build)
