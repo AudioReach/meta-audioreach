@@ -57,7 +57,7 @@ runs:
             set -ex
             if [ "${{ inputs.build_type }}" = "flat_build" ]; then
               umask 022
-              #kas build meta-audioreach/ci/${{ inputs.kas_file }}
+              kas build meta-audioreach/ci/${{ inputs.kas_file }}
             else
               kas shell meta-audioreach/ci/${{ inputs.kas_file }} -c '
                 umask 022
