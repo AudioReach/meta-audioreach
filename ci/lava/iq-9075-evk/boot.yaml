@@ -33,6 +33,8 @@ actions:
     auto_login:
       login_prompt: 'login:'
       username: root
+      password_prompt: 'Password'
+      password: oelinux123
     method: minimal
     prompts:
     - root@{{DEVICE_TYPE}}
