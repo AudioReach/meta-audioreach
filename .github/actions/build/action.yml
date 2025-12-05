@@ -56,7 +56,7 @@ runs:
               umask 022
               kas build meta-audioreach/ci/${{ inputs.kas_file }}
             else
-              kas shell meta-audioreach/ci/${{ inputs.kas_file }} -c '
+              kas shell meta-audioreach/ci/${{ inputs.kas_file }} '
                 umask 022
                 # Flat build or generate sdk build
                 ${{ inputs.build_command }}
