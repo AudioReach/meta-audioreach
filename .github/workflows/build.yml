@@ -11,7 +11,7 @@ on:
       build_command:
         required: false
         type: string
-        default: "bitbake core-image-base"
+        default: "bitbake qcom-multimedia-image"
         description: Command to run for the build
 
       build_type:
