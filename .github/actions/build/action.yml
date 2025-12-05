@@ -50,7 +50,7 @@ runs:
           -w ${USER_HOME}/workspace \
           --privileged \
           ${{ inputs.docker_image }} \
-          bash -c '
+          bash -c "
             set -ex
             if [ "${{ inputs.build_type }}" = "flat_build" ]; then
               umask 022
@@ -62,7 +62,7 @@ runs:
                 ${{ inputs.build_command }}
             '
             fi
-          '
+          "
         echo "::endgroup::"
 
     - name: Create tar archive for the build
