@@ -21,7 +21,6 @@ jobs:
       build_matrix: ${{ needs.load_parameters.outputs.build_matrix }}
       build_command: ${{ needs.load_parameters.outputs.flat_build }}
       build_type: flat_build
-      cache_key_prefix: ${{ needs.load_parameters.outputs.build_matrix_key }}
 
   sdk_build:
     needs: [load_parameters, flat_build]
@@ -31,7 +30,6 @@ jobs:
       build_matrix: ${{ needs.load_parameters.outputs.build_matrix }}
       build_command: ${{ needs.load_parameters.outputs.sdk_build_command }}
       build_type: sdk_build
-      cache_key_prefix: ${{ needs.load_parameters.outputs.build_matrix_key }}
 
   tests:
     needs: [load_parameters, flat_build]
