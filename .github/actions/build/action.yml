@@ -68,7 +68,7 @@ runs:
       shell: bash
       run: |
         #!/bin/bash
-        set -ex
+        set -e
 
         # Process the kas file to remove the .yml extension
         KAS_FILE="${{ inputs.kas_file }}"
@@ -93,7 +93,7 @@ runs:
       shell: bash
       run: |
         #!/bin/bash
-        set -ex
+        set -e
 
         cd ..
         cd build/tmp/deploy/sdk/
