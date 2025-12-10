@@ -55,6 +55,8 @@ local_conf_header:
     EXTRA_IMAGE_FEATURES = "allow-empty-password empty-root-password allow-root-login"
     IMAGE_ROOTFS_EXTRA_SPACE = "307200"
     WATCHDOG_RUNTIME_SEC:pn-systemd = "30"
+    BB_NUMBER_THREADS = "12"
+    BB_PRESSURE_MAX_MEMORY = "500"
 
 machine: unset
 
