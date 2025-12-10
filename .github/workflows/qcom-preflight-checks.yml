@@ -13,5 +13,5 @@ permissions:
 
 jobs:
   qcom-preflight-checks:
-    uses: Audioreach/audioreach-workflows/.github/workflows/qcom-preflight-checks.yml@ci_test
+    uses: Audioreach/audioreach-workflows/.github/workflows/qcom-preflight-checks.yml@BB_test
     secrets: inherit

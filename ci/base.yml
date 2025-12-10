@@ -56,7 +56,6 @@ local_conf_header:
     IMAGE_ROOTFS_EXTRA_SPACE = "307200"
     WATCHDOG_RUNTIME_SEC:pn-systemd = "30"
     BB_NUMBER_THREADS = "16"
-    BB_PRESSURE_MAX_MEMORY = "1000"
 
 machine: unset
 

@@ -32,11 +32,11 @@ jobs:
     steps:
       - name: Build docker Image  # Build docker image used to build the project
         id: get-docker-image
-        uses: Audioreach/meta-audioreach/.github/actions/build_docker_image@ci_test
+        uses: Audioreach/meta-audioreach/.github/actions/build_docker_image@BB_test
 
       - name: Sync Codebase
         id: sync
-        uses: Audioreach/meta-audioreach/.github/actions/sync@ci_test
+        uses: Audioreach/meta-audioreach/.github/actions/sync@BB_test
         with:
           event_name: ${{ github.event_name }}
           pr_ref: ${{ github.event.pull_request.head.ref }}
@@ -44,7 +44,7 @@ jobs:
           base_ref: ${{ github.ref_name }}
 
       - name: Build for ${{ matrix.build_matrix.machine }}
-        uses: Audioreach/meta-audioreach/.github/actions/build@ci_test
+        uses: Audioreach/meta-audioreach/.github/actions/build@BB_test
         with:
           docker_image: ${{ steps.get-docker-image.outputs.image_name }}
           kas_file: ${{ matrix.build_matrix.kas_file }}

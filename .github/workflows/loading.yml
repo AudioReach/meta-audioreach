@@ -35,4 +35,4 @@ jobs:
 
       - name: Load Parameters
         id: loading
-        uses: Audioreach/meta-audioreach/.github/actions/loading@ci_test
+        uses: Audioreach/meta-audioreach/.github/actions/loading@BB_test
