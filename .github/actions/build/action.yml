@@ -46,16 +46,16 @@ runs:
         docker run \
           --rm \
           --user $(id -u):$(id -g) \
-          -v ${WORKSPACE}:${USER_HOME}/workspace \       
+          -v ${WORKSPACE}:${USER_HOME}/workspace \
           -w ${USER_HOME}/workspace \
-          --privileged \        
+          --privileged \
           ${{ inputs.docker_image }} \
           bash -c "
             set -e
             kas shell meta-audioreach/ci/${{ inputs.kas_file }} -c '
               umask 022
               # Flat build or generate sdk build
-              bitbake qcom-multimedia-image
+              bitba
               ${{ inputs.build_command }}
             '
           "
