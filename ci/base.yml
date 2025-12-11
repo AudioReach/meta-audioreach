@@ -57,8 +57,6 @@ local_conf_header:
     BB_NUMBER_THREADS = "16"
     PARALLEL_MAKE = "-j16"
     SSTATE_DIR = "/work/sstate-cache"
-    DL_DIR = "/work/download
-
 
 machine: unset
 
