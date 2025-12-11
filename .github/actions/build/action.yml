@@ -55,7 +55,6 @@ runs:
             kas shell meta-audioreach/ci/${{ inputs.kas_file }} -c '
               umask 022
               # Flat build or generate sdk build
-              bitba
               ${{ inputs.build_command }}
             '
           "
