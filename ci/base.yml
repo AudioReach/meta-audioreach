@@ -54,9 +54,11 @@ local_conf_header:
     DISTRO_FEATURES:append = " efi pni-names"
     EXTRA_IMAGE_FEATURES = "allow-empty-password empty-root-password allow-root-login"
     IMAGE_ROOTFS_EXTRA_SPACE = "307200"
-    WATCHDOG_RUNTIME_SEC:pn-systemd = "30"
-    BB_NUMBER_THREADS = "32"
-    BB_PRESSURE_MAX_MEMORY = "1000"
+    BB_NUMBER_THREADS: "16"
+    PARALLEL_MAKE: "-j16"
+    SSTATE_DIR: "/work/sstate-cache"
+    DL_DIR: "/work/download
+
 
 machine: unset
 
