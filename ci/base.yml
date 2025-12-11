@@ -54,8 +54,8 @@ local_conf_header:
     DISTRO_FEATURES:append = " efi pni-names"
     EXTRA_IMAGE_FEATURES = "allow-empty-password empty-root-password allow-root-login"
     IMAGE_ROOTFS_EXTRA_SPACE = "307200"
-    BB_NUMBER_THREADS = "16"
-    PARALLEL_MAKE = "-j16"
+    BB_NUMBER_THREADS = "32"
+    PARALLEL_MAKE = "-j32"
 
 machine: unset
 
