@@ -49,6 +49,10 @@ runs:
           -v ${WORKSPACE}:${USER_HOME}/workspace \
           -w ${USER_HOME}/workspace \
           --privileged \
+          --cpus=8 \
+          --memory=16g \
+          --memory-swap=16g \
+          --ulimit nofile=1048576:1048576 \
           ${{ inputs.docker_image }} \
           bash -c "
             set -e
