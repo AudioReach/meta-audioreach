@@ -100,7 +100,7 @@ runs:
         sdk_file=$(ls qcom-distro-*.sh)
         PUB_DIR=${{ github.workspace }}/pub/${{ env.MACHINE }}/sdk_build
         mkdir -p $PUB_DIR
-        cp $sdk_file $PUB_DIR/sdk-${MACHINE}.sh
+        cp $sdk_file $PUB_DIR/sdk-${MACHINE}-qcom.sh
         echo "${PUB_DIR}/sdk-${MACHINE}.sh" >> ${{ env.filepath }}
         ls -larth $PUB_DIR
         echo "SDK artifacts created in $PUB_DIR"
