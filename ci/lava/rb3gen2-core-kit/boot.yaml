@@ -29,17 +29,20 @@ actions:
     timeout:
       minutes: 5
     to: flasher
+
 - boot:
+    method: minimal
+    messages:
+      - 'Linux version [0-9]'     # Helps LAVA detect kernel boot start
     auto_login:
       login_prompt: 'login:'
       username: root
       password_prompt: 'Password:'
       password: oelinux123
-    method: minimal
     prompts:
-    - root@{{DEVICE_TYPE}}
-    timeout:
-      minutes: 3
+      - root@{{DEVICE_TYPE}}      # Your original prompt retained
+       timeout:
+        minutes: 10                 # Increased to handle first-boot delays
 - test:
     timeout:
       minutes: 10
