@@ -3,7 +3,7 @@
 header:
   version: 14
 
-distro: poky
+distro: poky-altcfg
 
 defaults:
   repos:
@@ -41,9 +41,7 @@ repos:
 local_conf_header:
   base: |
     CONF_VERSION = "2"
-    INIT_MANAGER = "systemd"
-    PACKAGE_CLASSES = "package_ipk"
-    INHERIT += "buildstats buildstats-summary"
+    INHERIT += "buildstats-summary"
     INHERIT += "buildhistory"
     INHERIT += "rm_work"
     IMAGE_INSTALL:append = "packagegroup-audioreach"
@@ -56,7 +54,6 @@ local_conf_header:
     DISTRO_FEATURES:append = " efi pni-names"
     EXTRA_IMAGE_FEATURES = "allow-empty-password empty-root-password allow-root-login"
     IMAGE_ROOTFS_EXTRA_SPACE = "307200"
-    WATCHDOG_RUNTIME_SEC:pn-systemd = "30"
 
 machine: unset
 
