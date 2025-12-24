@@ -44,6 +44,8 @@ actions:
     timeout:
       minutes: 3                 # Increased to handle first-boot delays
 - test:
+    timeout:
+      minutes: 10
     definitions:
     - from: git
       name: "{{DEVICE_TYPE}}-smoke-test"
