@@ -42,7 +42,7 @@ actions:
     prompts:
       - root@{{DEVICE_TYPE}}      # Your original prompt retained
     timeout:
-      minutes: 10                 # Increased to handle first-boot delays
+      minutes: 3                 # Increased to handle first-boot delays
 - test:
     timeout:
       minutes: 10
