@@ -43,24 +43,39 @@ actions:
       - root@{{DEVICE_TYPE}}      # Your original prompt retained
     timeout:
       minutes: 3                 # Increased to handle first-boot delays
+
 - test:
     timeout:
       minutes: 10
     definitions:
-    - from: git
-      name: "{{DEVICE_TYPE}}-smoke-test"
-      path: automated/linux/smoke/smoke.yaml
-      repository: https://github.com/linaro/test-definitions.git
-      parameters:
-        SKIP_INSTALL: "True"
-        TESTS: "pwd, uname -a, ip a, dmesg"
-    - from: git
-      name: "{{DEVICE_TYPE}}-audio-test"
-      path: Runner/plans/meta-ar-ci-premerge.yaml
-      repository: https://github.com/tmoida/qcom-linux-testkit.git
-      parameters:
-        SKIP_INSTALL: "True"
-        TESTS: "pwd, uname -a, ip a, dmesg"
+      # Preload AudioClips before git tests
+      - from: inline
+        name: preload-audioclips
+        format: lava-test-shell
+        run:
+          steps:
+            - set -e
+            - AUDIO_DIR="/home/audioclips"
+            - mkdir -p "${AUDIO_DIR}"
+            - wget -O "${AUDIO_DIR}/AudioClips.tar.gz" "https://github.com/qualcomm-linux/qcom-linux-testkit/releases/download/Pulse-Audio-Files-v1.0/AudioClips.tar.gz"
+            - tar -xzf "${AUDIO_DIR}/AudioClips.tar.gz" -C "${AUDIO_DIR}"
+            - ls -la "${AUDIO_DIR}"
+
+      - from: git
+        name: "{{DEVICE_TYPE}}-smoke-test"
+        path: automated/linux/smoke/smoke.yaml
+        repository: https://github.com/linaro/test-definitions.git
+        parameters:
+          SKIP_INSTALL: "True"
+          TESTS: "pwd, uname - a, ip a, dmesg"
+
+      - from: git
+        name: "{{DEVICE_TYPE}}-audio-test"
+        path: Runner/plans/meta-ar-ci-premerge.yaml
+        repository: https://github.com/tmoida/qcom-linux-testkit.git
+        parameters:
+          SKIP_INSTALL: "True"
+          TESTS: "pwd, uname -a, ip a, dmesg"
 
 - command:
     name: network_turn_on
