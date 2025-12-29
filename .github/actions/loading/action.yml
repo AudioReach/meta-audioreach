@@ -54,7 +54,7 @@ runs:
           core.setOutput('flat_build', flat_build)
           console.log("FLAT BUILD COMMAND:", flat_build)
 
-          const sdk = 'bitbake qcom-multimedia-image -c populate_sdk'
+          const sdk = 'bitbake qcom-multimedia-image && bitbake qcom-multimedia-image -c populate_sdk'
           core.setOutput('sdk_build_command', sdk)
           console.log("SDK BUILD COMMAND:", sdk)
 
