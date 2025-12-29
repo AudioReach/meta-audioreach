@@ -57,7 +57,7 @@ actions:
     - from: git
       name: "{{DEVICE_TYPE}}-audio-test"
       path: Runner/plans/meta-ar-ci-premerge.yaml
-      repository: https://github.com/qualcomm-linux/qcom-linux-testkit.git
+      repository: https://github.com/tmoida/qcom-linux-testkit.git
       parameters:
         SKIP_INSTALL: "True"
         TESTS: "pwd, uname -a, ip a, dmesg"
