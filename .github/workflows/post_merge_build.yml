@@ -13,8 +13,18 @@ jobs:
   load_parameters:
     uses: ./.github/workflows/loading.yml
 
+
+  flat_build:
+    needs: load_parameters
+    uses: ./.github/workflows/build.yml
+    secrets: inherit
+    with:
+      build_matrix: ${{ needs.load_parameters.outputs.build_matrix }}
+      build_command: ${{ needs.load_parameters.outputs.flat_build }}
+      build_type: flat_build
+      
   sdk_build:
-    needs: [load_parameters]
+    needs: [load_parameters,flat_build]
     uses: ./.github/workflows/build.yml
     secrets: inherit
     with:
@@ -23,7 +33,7 @@ jobs:
       build_type: sdk_build
 
   tests:
-    needs: [load_parameters]
+    needs: [load_parameters,flat_build]
     if: ${{ (success() || failure()) && !contains(needs.flat_build.result, 'skipped') }}
     uses: ./.github/workflows/test.yml
     secrets: inherit
