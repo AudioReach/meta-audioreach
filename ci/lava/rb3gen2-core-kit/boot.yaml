@@ -32,8 +32,6 @@ actions:
 
 - boot:
     method: minimal
-    messages:
-      - 'Linux version [0-9]'     # Helps LAVA detect kernel boot start
     auto_login:
       login_prompt: 'login:'
       username: root
@@ -56,19 +54,6 @@ actions:
         parameters:
           SKIP_INSTALL: "True"
           TESTS: "pwd, uname - a, ip a, dmesg"
-
-      # Second: inline preload-audioclips
-      - from: inline
-        name: preload-audioclips
-        format: lava-test-shell
-        run:
-          steps:
-            - set -e
-            - AUDIO_DIR="/home/audioclips"
-            - mkdir -p "${AUDIO_DIR}"
-            - wget -O "${AUDIO_DIR}/AudioClips.tar.gz" "https://github.com/qualcomm-linux/qcom-linux-testkit/releases/download/Pulse-Audio-Files-v1.0/AudioClips.tar.gz"
-            - tar -xzf "${AUDIO_DIR}/AudioClips.tar.gz" -C "${AUDIO_DIR}"
-            - ls -la "${AUDIO_DIR}"
 
       # Third: git-based audio-test
       - from: git
