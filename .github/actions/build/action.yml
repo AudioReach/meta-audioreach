@@ -55,7 +55,7 @@ runs:
           ${{ inputs.docker_image }} \
           bash -c "
             set -e
-            kas shell meta-audioreach/ci/${{ inputs.kas_file }} -c '
+            kas shell ${{ inputs.kas_file }} -c '
               umask 022
               # Flat build or generate sdk build
               ${{ inputs.build_command }}
@@ -72,7 +72,8 @@ runs:
 
         # Process the kas file to remove the .yml extension
         KAS_FILE="${{ inputs.kas_file }}"
-        KAS_FILE="${KAS_FILE%.yml}"
+        KAS_FILE="${KAS_FILE##*/}"   # strip path
+        KAS_FILE="${KAS_FILE%.*}"    # strip extension
 
         cd ..
         MACHINE=${{ env.MACHINE }}
@@ -106,7 +107,7 @@ runs:
         echo "SDK artifacts created in $PUB_DIR"
 
     - name: Upload artifacts
-      uses: Audioreach/meta-audioreach/.github/actions/aws-s3-exchanger@master
+      uses: Audioreach/meta-audioreach/.github/actions/aws-s3-exchanger@upstream
       with:
         mode: multi-upload
         local_file: ${{ env.filepath }}
