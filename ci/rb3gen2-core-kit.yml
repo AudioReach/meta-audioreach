@@ -5,5 +5,6 @@ header:
   includes:
   - ci/base.yml
   - ci/qcom-distro.yml
+  - ci/linux-qcom-6.18.yml
 
 machine: rb3gen2-core-kit

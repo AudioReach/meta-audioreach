@@ -1,5 +1,6 @@
 {
     "8275-evk": "meta-audioreach/ci/iq-8275-evk.yml",
     "9075-evk": "meta-audioreach/ci/iq-9075-evk.yml",
-    "rb3gen2": "meta-audioreach/ci/rb3gen2-core-kit.yml"
+    "rb3gen2": "meta-audioreach/ci/rb3gen2-core-kit.yml",
+    "kernel618": "meta-audioreach/ci/linux-qcom-6.18.yml"
 }
