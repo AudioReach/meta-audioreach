@@ -31,8 +31,8 @@ jobs:
         id: process_urls
         uses: Audioreach/meta-audioreach/.github/actions/process_urls@upstream
         env:
-          MACHINE: ${{ matrix.build_matrix.machine }}
-          
+          MACHINE: ${{ matrix.build_matrix.machine_name }}
+
       - name: Print trigger
         run: |
           echo "Triggered by ${{ github.event_name }}"
@@ -59,18 +59,21 @@ jobs:
           GITHUB_RUN_ID="${{ github.run_id }}"
           BUILD_FILE_NAME="${{ steps.process_urls.outputs.filename }}"
           BUILD_DOWNLOAD_URL="${{ steps.process_urls.outputs.flat_build_url }}"
+
           sed -i "s|{{DEVICE_TYPE}}|${DEVICE_TYPE}|g" "${target_file}"
           sed -i "s|{{GITHUB_SHA}}|${GITHUB_SHA}|g" "${target_file}"
+
+          # REQUIRED FIX — remove HTML escapes
           ESCAPED_URL=$(echo "$BUILD_DOWNLOAD_URL" | sed 's/[&/?=]/\\&/g')
           sed -i "s|{{BUILD_DOWNLOAD_URL}}|$ESCAPED_URL|g" "${target_file}"
+
           sed -i "s|{{BUILD_FILE_NAME}}|${BUILD_FILE_NAME}|g" "${target_file}"
           sed -i "s|{{GITHUB_RUN_ID}}|${GITHUB_RUN_ID}|g" "${target_file}"
           cat "${target_file}"
 
           echo "target_file=${target_file}" >> $GITHUB_OUTPUT
       
-      # Submit job to LAVA
-      - name: Test ${{ matrix.build_matrix.machine }}
+      - name: Test ${{ matrix.build_matrix.machine_name }}
         if: ${{ steps.listjobs.outputs.target_file != '' }}
         id: submit_job
         timeout-minutes: 20
@@ -89,8 +92,8 @@ jobs:
         run: |
           if [ "${{ steps.submit_job.outcome }}" == "success" ]; then
             echo "## Test Job Summary" >> $GITHUB_STEP_SUMMARY
-            echo ":heavy_check_mark: Test job for ${{ matrix.build_matrix.machine }} completed successfully." >> $GITHUB_STEP_SUMMARY
+            echo ":heavy_check_mark: Test job for ${{ matrix.build_matrix.machine_name }} completed successfully." >> $GITHUB_STEP_SUMMARY
           else
             echo "## Test Job Summary" >> $GITHUB_STEP_SUMMARY
-            echo ":x: Test job for ${{ matrix.build_matrix.machine }} failed." >> $GITHUB_STEP_SUMMARY
+            echo ":x: Test job for ${{ matrix.build_matrix.machine_name }} failed." >> $GITHUB_STEP_SUMMARY
           fi

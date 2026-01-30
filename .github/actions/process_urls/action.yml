@@ -28,42 +28,54 @@ runs:
         script: |
           const fs = require('fs');
           const p = require('path');
-          // Helper function to find URL by filename
-          function findUrlByFilename(filename) {
-              for (const [path, url] of Object.entries(data)) {
-              if (path.endsWith(filename)) {
-                  return url;
-              }
-              }
-              return null;
-          }
-          const filePath = p.join(process.env.GITHUB_WORKSPACE, 'presigned_urls.json');
+          const core = require('@actions/core');
+
+          // Use the downloaded file that includes the MACHINE in its name
+          const machine = process.env.MACHINE;
+          const jsonName = `${machine}_flat_build_presigned_urls.json`;
+          const filePath = p.join(process.env.GITHUB_WORKSPACE, jsonName);
+
           if (fs.existsSync(filePath)) {
-              console.log("File exists");
+            console.log(`Found presigned URLs file: ${filePath}`);
           } else {
-              console.log("File does not exist");
-              core.setFailed(`File not found: ${filePath}`);
+            core.setFailed(`File not found: ${filePath}`);
+            return;
           }
+
           // Read the JSON file
+          const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+
+          // Initialize outputs
           let flat_build_url = "";
           let flat_build_vision = "";
           let script_file_url = "";
-          let filename= "";
-          const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-          // Find the URLs for the specific files
-          for (const [path, url] of Object.entries(data)) {
-              if (path.endsWith('.tar.gz')) {
-                  if (path.includes('vision')) {
-                      flat_build_vision = url; // Assign vision file URL
-                  } else {
-                      flat_build_url = url; // Assign common tar.gz file URL
-                      filename = path;
-                  }
-              } else if (path.endsWith('.sh')) {
-                  script_file_url = url; // Store .sh file URL if needed
+          let filename = "";
+
+          // Helper: find URL by filename (kept from your original intent)
+          function findUrlByFilename(name) {
+            for (const [path, url] of Object.entries(data)) {
+              if (path.endsWith(name)) {
+                return url;
               }
+            }
+            return null;
           }
-          // Set outputs for the URLs
+
+          // Find URLs for specific files
+          for (const [path, url] of Object.entries(data)) {
+            if (path.endsWith('.tar.gz')) {
+              if (path.includes('vision')) {
+                flat_build_vision = url; // vision tarball
+              } else {
+                flat_build_url = url;     // common tarball
+                filename = path;          // keep full path string; downstream can basename if needed
+              }
+            } else if (path.endsWith('.sh')) {
+              script_file_url = url;      // optional SDK installer URL if present
+            }
+          }
+
+          // Set outputs
           core.setOutput('flat_build_vision', flat_build_vision);
           core.setOutput('script_file_url', script_file_url);
           core.setOutput('flat_build_url', flat_build_url);
