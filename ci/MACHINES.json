@@ -1,5 +1,5 @@
 {
-    "8275-evk": "iq-8275-evk.yml",
-    "9075-evk": "iq-9075-evk.yml",
-    "rb3gen2": "rb3gen2-core-kit.yml"
+    "8275-evk": "meta-audioreach/ci/iq-8275-evk.yml",
+    "9075-evk": "meta-audioreach/ci/iq-9075-evk.yml",
+    "rb3gen2": "meta-audioreach/ci/rb3gen2-core-kit.yml"
 }
