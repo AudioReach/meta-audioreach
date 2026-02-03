@@ -8,7 +8,7 @@ inputs:
     required: true
 
   kas_file:
-    description: KAS file to use for the build job
+    description: KAS file to use for the build job   # now contains trimmed kas_basename
     required: true
 
   machine_name:
@@ -28,6 +28,7 @@ inputs:
 runs:
   using: "composite"
   steps:
+
     - name: Initialize env (MACHINE, file list)
       shell: bash
       run: |
@@ -44,12 +45,10 @@ runs:
         #!/bin/bash
         set -e
 
-        # touch file_list.txt
         filepath="${{ github.workspace }}/${{ env.MACHINE }}_${{ inputs.build_type }}file_list.txt"
         echo "filepath=${filepath}" >> $GITHUB_ENV
         touch $filepath
 
-        # Define variables
         USER_ID=$(id -u)
         GROUP_ID=$(id -g)
         USER=$(whoami)
@@ -71,7 +70,6 @@ runs:
             set -e
             kas shell ${{ inputs.kas_file }} -c '
               umask 022
-              # Flat build or generate sdk build
               ${{ inputs.build_command }}
             '
           "
@@ -90,11 +88,11 @@ runs:
         PUB_DIR=${{ github.workspace }}/pub/${MACHINE}/flat_build
         mkdir -p $PUB_DIR
 
-        cd $BUILD_DIR/tmp/deploy/images/${MACHINE}
-        cp qcom-multimedia-image-${MACHINE}.rootfs.qcomflash.tar.gz "$PUB_DIR/"
-          
-        # create file file_list
-        echo "${PUB_DIR}/qcom-multimedia-image-${MACHINE}.rootfs.qcomflash.tar.gz" >> ${{ env.filepath }}
+        # REQUIRED CHANGE: use kas basename instead of MACHINE
+        cd $BUILD_DIR/tmp/deploy/images/${{ inputs.kas_file }}
+        cp qcom-multimedia-image-${{ inputs.kas_file }}.rootfs.qcomflash.tar.gz "$PUB_DIR/"
+
+        echo "${PUB_DIR}/qcom-multimedia-image-${{ inputs.kas_file }}.rootfs.qcomflash.tar.gz" >> ${{ env.filepath }}
         ls -larth $PUB_DIR
         echo "Build artifacts created in $PUB_DIR"
 

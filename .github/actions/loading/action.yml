@@ -48,7 +48,7 @@ runs:
 
           /**
            * Normalize MACHINES.json into a matrix array with entries:
-           *   { selector, kas_file, machine_name }
+           *   { selector, kas_file, kas_basename, machine_name }
            * Supports:
            *  - "key": "path.yml"
            *  - "key": { "file_name": "...", "machine_name": "..." }
@@ -62,12 +62,17 @@ runs:
               const kas = obj.file_name;
               const machine = obj.machine_name || selector; // fallback to selector if not provided
               if (!kas || typeof kas !== 'string') return;
-              out.push({ selector, kas_file: kas, machine_name: machine });
+
+              // derive basename without .yml, e.g., iq-9075-evk
+              const kas_basename = kas.replace(/^.*\//, '').replace(/\.yml$/, '');
+              out.push({ selector, kas_file: kas, kas_basename, machine_name: machine });
             };
 
             if (typeof value === 'string') {
               // Assume machine_name == selector if not specified
-              out.push({ selector, kas_file: value, machine_name: selector });
+              const kas = value;
+              const kas_basename = kas.replace(/^.*\//, '').replace(/\.yml$/, '');
+              out.push({ selector, kas_file: kas, kas_basename, machine_name: selector });
             } else if (Array.isArray(value)) {
               value.forEach(v => pushItem(v));
             } else if (typeof value === 'object' && value) {
