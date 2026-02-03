@@ -29,7 +29,7 @@ runs:
         script: |
           const fs = require('fs');
           const path = require('path');
-          const core = require('@actions/core');
+          // 'core' is injected by actions/github-script
 
           const filePath = path.join(process.env.GITHUB_WORKSPACE, 'ci', 'MACHINES.json');
 
@@ -89,18 +89,24 @@ runs:
             return;
           }
 
-          // Emit output
-          core.setOutput('build_matrix', JSON.stringify(matrix, null, 2));
+          // Emit output (compact JSON—consumers should use fromJson())
+          core.setOutput('build_matrix', JSON.stringify(matrix));
           console.log('Normalized build matrix:');
           console.log(JSON.stringify(matrix, null, 2));
+
+    # Minimal step to satisfy the declared docker_image output
+    - name: Get Docker image
+      id: get-docker-image
+      shell: bash
+      run: |
+        echo "image_name=ghcr.io/${{ github.repository }}/builder:${{ github.sha }}" >> "$GITHUB_OUTPUT"
 
     - name: Set the build commands
       id: set-build-command
       uses: actions/github-script@v7
       with:
         script: |
-          const core = require('@actions/core');
-
+          // 'core' is injected by actions/github-script
           const flat_build = 'bitbake qcom-multimedia-image';
           core.setOutput('flat_build', flat_build);
           console.log("FLAT BUILD COMMAND:", flat_build);
