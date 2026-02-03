@@ -1,9 +1,9 @@
 SUMMARY = "AudioReach Graph Service"
 
 LICENSE = "BSD-3-Clause"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=6921cdd00790cae6b02ce61e60ab9e55"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=ef516c5438f1b599326a5e207572f477"
 
-SRCREV = "f5ff09d4b28a5b90389058d0803a2ad3e3690730"
+SRCREV = "7a76df677606833ccb7521a1487ae1129a9c3f04"
 PV = "0.0+git"
 SRC_URI = "git://git@github.com/Audioreach/audioreach-graphservices.git;protocol=https;branch=master"
 
