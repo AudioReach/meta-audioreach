@@ -36,12 +36,15 @@ runs:
         set -e
         echo "MACHINE=${{ inputs.machine_name }}" >> $GITHUB_ENV
 
-        # >>> REQUIRED CHANGE (1): derive unique artifact_key from kas_file
+        # REQUIRED CHANGE (1): derive unique artifact_key from kas_file
         KAS_BASE="$(basename "${{ inputs.kas_file }}")"
         ARTIFACT_KEY="${KAS_BASE%.*}"
         echo "ARTIFACT_KEY=${ARTIFACT_KEY}" >> $GITHUB_ENV
 
-        # >>> REQUIRED CHANGE (2): make filepath unique per variant
+        # >>> REQUIRED: add ARTIFACT_KEY_BASENAME for Process URLs action
+        echo "ARTIFACT_KEY_BASENAME=${ARTIFACT_KEY}" >> $GITHUB_ENV
+
+        # REQUIRED CHANGE (2): make filepath unique per variant
         filepath="${{ github.workspace }}/${{ inputs.machine_name }}_${{ inputs.build_type }}_${ARTIFACT_KEY}_file_list.txt"
         echo "filepath=${filepath}" >> $GITHUB_ENV
         : > "$filepath"
@@ -52,7 +55,6 @@ runs:
         #!/bin/bash
         set -e
 
-        # >>> keep using the same filepath (already unique)
         filepath="${{ github.workspace }}/${{ env.MACHINE }}_${{ inputs.build_type }}_${{ env.ARTIFACT_KEY }}_file_list.txt"
         echo "filepath=${filepath}" >> $GITHUB_ENV
         touch $filepath
@@ -137,8 +139,8 @@ runs:
       env:
         MACHINE: ${{ env.MACHINE }}
         BUILD_TYPE: ${{ inputs.build_type }}
-        # >>> REQUIRED: pass ARTIFACT_KEY so S3 helper can name artifact uniquely
         ARTIFACT_KEY: ${{ env.ARTIFACT_KEY }}
+        ARTIFACT_KEY_BASENAME: ${{ env.ARTIFACT_KEY_BASENAME }}   # <<< REQUIRED
 
     - name: Update Summary
       shell: bash

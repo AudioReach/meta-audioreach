@@ -13,25 +13,23 @@ outputs:
 runs:
   using: "composite"
   steps:
-    # Normalize ARTIFACT_KEY to basename without .yml (so we can use it in artifact name)
+    # Normalize ARTIFACT_KEY to basename without .yml
     - name: Normalize ARTIFACT_KEY
       shell: bash
       run: |
         set -e
-        # ARTIFACT_KEY may be a path like meta-audioreach/ci/rb3gen2-core-kit.yml
         base="$(basename "${ARTIFACT_KEY}" .yml)"
         echo "ARTIFACT_KEY_BASENAME=${base}" >> "$GITHUB_ENV"
         echo "Normalized ARTIFACT_KEY to: ${base}"
 
-    # Only download urls for flat_build ('flat_build' url is used in test job)
+    # Download artifact into a deterministic folder
     - name: Download Presigned URL list
       uses: actions/download-artifact@v4
       with:
-        # Use normalized basename so it matches the artifact name produced during build
         name: ${{ env.MACHINE }}_flat_build_${{ env.ARTIFACT_KEY_BASENAME }}_presigned_urls.json
-        path: ${{ github.workspace }}
+        path: ${{ github.workspace }}/_artifacts
 
-    # Extract the filename and url from the json file
+    # Extract + find the JSON safely
     - name: Process Presigned URLs
       id: process_urls
       uses: actions/github-script@v7
@@ -39,58 +37,81 @@ runs:
         script: |
           const fs = require('fs');
           const p = require('path');
-          // NOTE: do not redeclare 'core'; it's provided by github-script v7
 
+          const workspace = process.env.GITHUB_WORKSPACE;
           const machine = process.env.MACHINE;
-
-          // ARTIFACT_KEY may be a full path; normalize to basename without .yml
-          const artifactKeyRaw = process.env.ARTIFACT_KEY || '';
-          const artifactKey = p.basename(artifactKeyRaw, '.yml');
+          const artifactKey = p.basename(process.env.ARTIFACT_KEY || '', '.yml');
 
           const jsonName = `${machine}_flat_build_${artifactKey}_presigned_urls.json`;
-          const filePath = p.join(process.env.GITHUB_WORKSPACE, jsonName);
 
-          if (fs.existsSync(filePath)) {
-            console.log(`Found presigned URLs file: ${filePath}`);
-          } else {
-            core.setFailed(`File not found: ${filePath}`);
-            return;
-          }
+          // Candidate file paths
+          const candidates = [
+            p.join(workspace, '_artifacts', jsonName),
+            p.join(workspace, '_artifacts', jsonName, jsonName),
+          ];
 
-          // Read the JSON file
-          const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-
-          // Initialize outputs
-          let flat_build_url = "";
-          let flat_build_vision = "";
-          let script_file_url = "";
-          let filename = "";
-
-          // Helper: find URL by filename (kept from your original intent)
-          function findUrlByFilename(name) {
-            for (const [path, url] of Object.entries(data)) {
-              if (path.endsWith(name)) {
-                return url;
+          // Recursive fallback search
+          function findRecursively(dir, target) {
+            const entries = fs.readdirSync(dir, { withFileTypes: true });
+            for (const e of entries) {
+              const full = p.join(dir, e.name);
+              if (e.isDirectory()) {
+                const found = findRecursively(full, target);
+                if (found) return found;
+              } else if (e.isFile() && e.name === target) {
+                return full;
               }
             }
             return null;
           }
 
-          // Find URLs for specific files
-          for (const [path, url] of Object.entries(data)) {
-            if (path.endsWith('.tar.gz')) {
-              if (path.includes('vision')) {
-                flat_build_vision = url; // vision tarball
+          // Try direct candidates
+          let filePath = candidates.find(f => fs.existsSync(f));
+
+          // Try recursive match if not found
+          if (!filePath) {
+            filePath = findRecursively(p.join(workspace, '_artifacts'), jsonName);
+          }
+
+          // Try relaxed match (_presigned_urls.json)
+          if (!filePath) {
+            filePath = findRecursively(
+              p.join(workspace, '_artifacts'),
+              jsonName
+            );
+          }
+
+          if (!filePath) {
+            core.setFailed(
+              `Presigned URL JSON not found.\n` +
+              `Expected: ${jsonName}\n` +
+              `Searched paths:\n- ${candidates.join('\n- ')}`
+            );
+            return;
+          }
+
+          console.log(`Found presigned URLs file: ${filePath}`);
+
+          const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+
+          let flat_build_url = "";
+          let flat_build_vision = "";
+          let script_file_url = "";
+          let filename = "";
+
+          for (const [pathStr, url] of Object.entries(data)) {
+            if (pathStr.endsWith('.tar.gz')) {
+              if (pathStr.includes('vision')) {
+                flat_build_vision = url;
               } else {
-                flat_build_url = url;     // common tarball
-                filename = path;          // keep full path string; downstream can basename if needed
+                flat_build_url = url;
+                filename = pathStr;
               }
-            } else if (path.endsWith('.sh')) {
-              script_file_url = url;      // optional SDK installer URL if present
+            } else if (pathStr.endsWith('.sh')) {
+              script_file_url = url;
             }
           }
 
-          // Set outputs
           core.setOutput('flat_build_vision', flat_build_vision);
           core.setOutput('script_file_url', script_file_url);
           core.setOutput('flat_build_url', flat_build_url);

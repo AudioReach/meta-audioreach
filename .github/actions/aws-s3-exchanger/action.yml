@@ -82,11 +82,26 @@ runs:
             ;;
         esac
 
+    # 🔧 Minimal addition: ensure the uploaded artifact file name matches the artifact name
+    - name: Prepare artifact file with expected name
+      if: ${{ inputs.mode == 'multi-upload' }}
+      shell: bash
+      run: |
+        set -euo pipefail
+        EXPECTED_NAME="${MACHINE}_${BUILD_TYPE}_${ARTIFACT_KEY_BASENAME}_presigned_urls.json"
+        SRC="${{ github.workspace }}/presigned_urls.json"
+        DST="${{ github.workspace }}/${EXPECTED_NAME}"
+        cp -f "$SRC" "$DST"
+        echo "ARTIFACT_JSON_PATH=$DST" >> "$GITHUB_ENV"
+        echo "Prepared artifact JSON: $DST"
+
     - name: Upload artifacts
       if: ${{ inputs.mode == 'multi-upload' }}
       uses: actions/upload-artifact@v4
       with:
-        # REQUIRED CHANGE: include ARTIFACT_KEY to make the artifact name unique per variant
-        name: ${{ env.MACHINE }}_${{ env.BUILD_TYPE }}_${{ env.ARTIFACT_KEY }}_presigned_urls.json
-        path: ${{ github.workspace }}/presigned_urls.json
+        # Use ARTIFACT_KEY_BASENAME to match the downloader (Process URLs) expectation
+        name: ${{ env.MACHINE }}_${{ env.BUILD_TYPE }}_${{ env.ARTIFACT_KEY_BASENAME }}_presigned_urls.json
+        path: ${{ env.ARTIFACT_JSON_PATH }}
+        compression-level: 0
+        if-no-files-found: error
         retention-days: 1
