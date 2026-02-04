@@ -86,7 +86,11 @@ runs:
         KAS_FILE="${{ inputs.kas_file }}"
         KAS_FILE="${KAS_FILE##*/}"
         KAS_FILE="${KAS_FILE%.*}"
-
+        
+        if [[ "$KAS_FILE" == "rb3gen2-core-kit-6.18" ]]; then
+            KAS_FILE="rb3gen2-core-kit"
+        fi
+        
         cd ..
         MACHINE=${{ env.MACHINE }}
         BUILD_DIR=build
