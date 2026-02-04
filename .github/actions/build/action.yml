@@ -35,7 +35,14 @@ runs:
         #!/bin/bash
         set -e
         echo "MACHINE=${{ inputs.machine_name }}" >> $GITHUB_ENV
-        filepath="${{ github.workspace }}/${{ inputs.machine_name }}_${{ inputs.build_type }}file_list.txt"
+
+        # >>> REQUIRED CHANGE (1): derive unique artifact_key from kas_file
+        KAS_BASE="$(basename "${{ inputs.kas_file }}")"
+        ARTIFACT_KEY="${KAS_BASE%.*}"
+        echo "ARTIFACT_KEY=${ARTIFACT_KEY}" >> $GITHUB_ENV
+
+        # >>> REQUIRED CHANGE (2): make filepath unique per variant
+        filepath="${{ github.workspace }}/${{ inputs.machine_name }}_${{ inputs.build_type }}_${ARTIFACT_KEY}_file_list.txt"
         echo "filepath=${filepath}" >> $GITHUB_ENV
         : > "$filepath"
 
@@ -45,7 +52,8 @@ runs:
         #!/bin/bash
         set -e
 
-        filepath="${{ github.workspace }}/${{ env.MACHINE }}_${{ inputs.build_type }}file_list.txt"
+        # >>> keep using the same filepath (already unique)
+        filepath="${{ github.workspace }}/${{ env.MACHINE }}_${{ inputs.build_type }}_${{ env.ARTIFACT_KEY }}_file_list.txt"
         echo "filepath=${filepath}" >> $GITHUB_ENV
         touch $filepath
 
@@ -82,7 +90,6 @@ runs:
         #!/bin/bash
         set -ex
 
-        # REQUIRED: derive basename from kas_file (strip path and .yml)
         KAS_FILE="${{ inputs.kas_file }}"
         KAS_FILE="${KAS_FILE##*/}"
         KAS_FILE="${KAS_FILE%.*}"
@@ -94,11 +101,9 @@ runs:
         cd ..
         MACHINE=${{ env.MACHINE }}
         BUILD_DIR=build
-        # Keep publish path based on MACHINE (matches your passing logs)
         PUB_DIR=${{ github.workspace }}/pub/${MACHINE}/flat_build
         mkdir -p "$PUB_DIR"
 
-        # Use the derived KAS_FILE for deploy dir and artifact name
         cd "$BUILD_DIR/tmp/deploy/images/${KAS_FILE}"
         cp "qcom-multimedia-image-${KAS_FILE}.rootfs.qcomflash.tar.gz" "$PUB_DIR/"
 
