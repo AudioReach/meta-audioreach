@@ -24,7 +24,6 @@ jobs:
         uses: Audioreach/meta-audioreach/.github/actions/sync@upstream
         with:
           event_name: ${{ github.event_name }}
-          # Guard PR-only fields; empty on non-PR events (e.g., push)
           pr_ref:  ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.ref || '' }}
           pr_repo: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || '' }}
           base_ref: ${{ github.ref_name }}
@@ -34,6 +33,7 @@ jobs:
         uses: Audioreach/meta-audioreach/.github/actions/process_urls@upstream
         env:
           MACHINE: ${{ matrix.build_matrix.machine_name }}
+          ARTIFACT_KEY: ${{ matrix.build_matrix.kas_file | basename | split('.')[0] }}
 
       - name: Print trigger
         run: |
@@ -46,7 +46,8 @@ jobs:
         shell: bash
         run: |
           kas_file="${{ matrix.build_matrix.kas_file }}"
-          DIR_NAME="${kas_file%.yml}"
+          # DIR_NAME="${kas_file%.yml}"
+          DIR_NAME="$(basename "$kas_file" .yml)"
           target_file="ci/lava/${DIR_NAME}/boot.yaml"
           if [ ! -f "$target_file" ]; then
             echo "Target file $target_file does not exist."
@@ -66,12 +67,12 @@ jobs:
           sed -i "s|{{DEVICE_TYPE}}|${DEVICE_TYPE}|g" "${target_file}"
           sed -i "s|{{GITHUB_SHA}}|${GITHUB_SHA}|g" "${target_file}"
 
-          # Escape &, /, ?, = for sed substitution
           ESCAPED_URL=$(echo "$BUILD_DOWNLOAD_URL" | sed 's/[&/?=]/\\&/g')
           sed -i "s|{{BUILD_DOWNLOAD_URL}}|$ESCAPED_URL|g" "${target_file}"
 
           sed -i "s|{{BUILD_FILE_NAME}}|${BUILD_FILE_NAME}|g" "${target_file}"
           sed -i "s|{{GITHUB_RUN_ID}}|${GITHUB_RUN_ID}|g" "${target_file}"
+
           echo "==== Rendered LAVA job ===="
           cat "${target_file}"
 

@@ -17,7 +17,8 @@ runs:
     - name: Download Presigned URL list
       uses: actions/download-artifact@v4
       with:
-        name: ${{ env.MACHINE }}_flat_build_presigned_urls.json
+        # REQUIRED: include ARTIFACT_KEY to match the new unique artifact name
+        name: ${{ env.MACHINE }}_flat_build_${{ env.ARTIFACT_KEY }}_presigned_urls.json
         path: ${{ github.workspace }}
 
     # Extract the filename and url from the json file
@@ -28,11 +29,12 @@ runs:
         script: |
           const fs = require('fs');
           const p = require('path');
-          const core = require('@actions/core');
+          // ❌ FIXED: removed 'const core = require("@actions/core");'
 
-          // Use the downloaded file that includes the MACHINE in its name
+          // REQUIRED: use MACHINE + flat_build + ARTIFACT_KEY to match downloaded artifact
           const machine = process.env.MACHINE;
-          const jsonName = `${machine}_flat_build_presigned_urls.json`;
+          const artifactKey = process.env.ARTIFACT_KEY;
+          const jsonName = `${machine}_flat_build_${artifactKey}_presigned_urls.json`;
           const filePath = p.join(process.env.GITHUB_WORKSPACE, jsonName);
 
           if (fs.existsSync(filePath)) {

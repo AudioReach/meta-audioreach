@@ -86,6 +86,7 @@ runs:
       if: ${{ inputs.mode == 'multi-upload' }}
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ env.MACHINE }}_${{ env.BUILD_TYPE }}_presigned_urls.json
+        # REQUIRED CHANGE: include ARTIFACT_KEY to make the artifact name unique per variant
+        name: ${{ env.MACHINE }}_${{ env.BUILD_TYPE }}_${{ env.ARTIFACT_KEY }}_presigned_urls.json
         path: ${{ github.workspace }}/presigned_urls.json
         retention-days: 1

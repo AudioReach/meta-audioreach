@@ -137,6 +137,8 @@ runs:
       env:
         MACHINE: ${{ env.MACHINE }}
         BUILD_TYPE: ${{ inputs.build_type }}
+        # >>> REQUIRED: pass ARTIFACT_KEY so S3 helper can name artifact uniquely
+        ARTIFACT_KEY: ${{ env.ARTIFACT_KEY }}
 
     - name: Update Summary
       shell: bash
