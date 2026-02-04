@@ -33,7 +33,7 @@ jobs:
         uses: Audioreach/meta-audioreach/.github/actions/process_urls@upstream
         env:
           MACHINE: ${{ matrix.build_matrix.machine_name }}
-          ARTIFACT_KEY: ${{ matrix.build_matrix.kas_file | basename | split('.')[0] }}
+          ARTIFACT_KEY: ${{ matrix.build_matrix.kas_file }}
 
       - name: Print trigger
         run: |

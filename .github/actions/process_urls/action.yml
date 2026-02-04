@@ -13,12 +13,22 @@ outputs:
 runs:
   using: "composite"
   steps:
+    # Normalize ARTIFACT_KEY to basename without .yml (so we can use it in artifact name)
+    - name: Normalize ARTIFACT_KEY
+      shell: bash
+      run: |
+        set -e
+        # ARTIFACT_KEY may be a path like meta-audioreach/ci/rb3gen2-core-kit.yml
+        base="$(basename "${ARTIFACT_KEY}" .yml)"
+        echo "ARTIFACT_KEY_BASENAME=${base}" >> "$GITHUB_ENV"
+        echo "Normalized ARTIFACT_KEY to: ${base}"
+
     # Only download urls for flat_build ('flat_build' url is used in test job)
     - name: Download Presigned URL list
       uses: actions/download-artifact@v4
       with:
-        # REQUIRED: include ARTIFACT_KEY to match the new unique artifact name
-        name: ${{ env.MACHINE }}_flat_build_${{ env.ARTIFACT_KEY }}_presigned_urls.json
+        # Use normalized basename so it matches the artifact name produced during build
+        name: ${{ env.MACHINE }}_flat_build_${{ env.ARTIFACT_KEY_BASENAME }}_presigned_urls.json
         path: ${{ github.workspace }}
 
     # Extract the filename and url from the json file
@@ -29,11 +39,14 @@ runs:
         script: |
           const fs = require('fs');
           const p = require('path');
-          // ❌ FIXED: removed 'const core = require("@actions/core");'
+          // NOTE: do not redeclare 'core'; it's provided by github-script v7
 
-          // REQUIRED: use MACHINE + flat_build + ARTIFACT_KEY to match downloaded artifact
           const machine = process.env.MACHINE;
-          const artifactKey = process.env.ARTIFACT_KEY;
+
+          // ARTIFACT_KEY may be a full path; normalize to basename without .yml
+          const artifactKeyRaw = process.env.ARTIFACT_KEY || '';
+          const artifactKey = p.basename(artifactKeyRaw, '.yml');
+
           const jsonName = `${machine}_flat_build_${artifactKey}_presigned_urls.json`;
           const filePath = p.join(process.env.GITHUB_WORKSPACE, jsonName);
 
