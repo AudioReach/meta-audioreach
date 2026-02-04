@@ -82,18 +82,24 @@ runs:
         #!/bin/bash
         set -ex
 
+        # REQUIRED: derive basename from kas_file (strip path and .yml)
+        KAS_FILE="${{ inputs.kas_file }}"
+        KAS_FILE="${KAS_FILE##*/}"
+        KAS_FILE="${KAS_FILE%.*}"
+
         cd ..
         MACHINE=${{ env.MACHINE }}
         BUILD_DIR=build
+        # Keep publish path based on MACHINE (matches your passing logs)
         PUB_DIR=${{ github.workspace }}/pub/${MACHINE}/flat_build
-        mkdir -p $PUB_DIR
+        mkdir -p "$PUB_DIR"
 
-        # REQUIRED CHANGE: use kas basename instead of MACHINE
-        cd $BUILD_DIR/tmp/deploy/images/${{ inputs.kas_file }}
-        cp qcom-multimedia-image-${{ inputs.kas_file }}.rootfs.qcomflash.tar.gz "$PUB_DIR/"
+        # Use the derived KAS_FILE for deploy dir and artifact name
+        cd "$BUILD_DIR/tmp/deploy/images/${KAS_FILE}"
+        cp "qcom-multimedia-image-${KAS_FILE}.rootfs.qcomflash.tar.gz" "$PUB_DIR/"
 
-        echo "${PUB_DIR}/qcom-multimedia-image-${{ inputs.kas_file }}.rootfs.qcomflash.tar.gz" >> ${{ env.filepath }}
-        ls -larth $PUB_DIR
+        echo "${PUB_DIR}/qcom-multimedia-image-${KAS_FILE}.rootfs.qcomflash.tar.gz" >> ${{ env.filepath }}
+        ls -larth "$PUB_DIR"
         echo "Build artifacts created in $PUB_DIR"
 
     - name: copy the sdk to the pub directory

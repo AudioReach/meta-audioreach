@@ -29,7 +29,6 @@ runs:
         script: |
           const fs = require('fs');
           const path = require('path');
-          // 'core' is injected by actions/github-script
 
           const filePath = path.join(process.env.GITHUB_WORKSPACE, 'ci', 'MACHINES.json');
 
@@ -46,30 +45,24 @@ runs:
             return;
           }
 
-          /**
-           * Normalize MACHINES.json into a matrix array with entries:
-           *   { selector, kas_file, kas_basename, machine_name }
-           * Supports:
-           *  - "key": "path.yml"
-           *  - "key": { "file_name": "...", "machine_name": "..." }
-           *  - "key": [ { "file_name": "...", "machine_name": "..." }, ... ]
-           */
+          // Normalize MACHINES.json into array items
           const normalizeEntry = (selector, value) => {
             const out = [];
 
             const pushItem = (obj) => {
               if (!obj || typeof obj !== 'object') return;
               const kas = obj.file_name;
-              const machine = obj.machine_name || selector; // fallback to selector if not provided
+
+              // ? REQUIRED CHANGE (only change)
+              const machine = obj.machine_name;
+
               if (!kas || typeof kas !== 'string') return;
 
-              // derive basename without .yml, e.g., iq-9075-evk
               const kas_basename = kas.replace(/^.*\//, '').replace(/\.yml$/, '');
               out.push({ selector, kas_file: kas, kas_basename, machine_name: machine });
             };
 
             if (typeof value === 'string') {
-              // Assume machine_name == selector if not specified
               const kas = value;
               const kas_basename = kas.replace(/^.*\//, '').replace(/\.yml$/, '');
               out.push({ selector, kas_file: kas, kas_basename, machine_name: selector });
@@ -82,7 +75,6 @@ runs:
             return out;
           };
 
-          // Build final matrix
           let matrix = [];
           for (const [selector, value] of Object.entries(raw)) {
             const items = normalizeEntry(selector, value) || [];
@@ -94,12 +86,10 @@ runs:
             return;
           }
 
-          // Emit output (compact JSON—consumers should use fromJson())
           core.setOutput('build_matrix', JSON.stringify(matrix));
-          console.log('Normalized build matrix:');
+          console.log("Normalized build matrix:");
           console.log(JSON.stringify(matrix, null, 2));
 
-    # Minimal step to satisfy the declared docker_image output
     - name: Get Docker image
       id: get-docker-image
       shell: bash
@@ -111,27 +101,26 @@ runs:
       uses: actions/github-script@v7
       with:
         script: |
-          // 'core' is injected by actions/github-script
           const flat_build = 'bitbake qcom-multimedia-image';
           core.setOutput('flat_build', flat_build);
-          console.log("FLAT BUILD COMMAND:", flat_build);
 
           const sdk = 'bitbake qcom-multimedia-image && bitbake qcom-multimedia-image -c populate_sdk';
           core.setOutput('sdk_build_command', sdk);
-          console.log("SDK BUILD COMMAND:", sdk);
 
     - name: Update Summary
       shell: bash
       run: |
         echo "## Build Matrix" >> "$GITHUB_STEP_SUMMARY"
-        echo "| Selector | Machine Name | KAS File |" >> "$GITHUB_STEP_SUMMARY"
-        echo "|---------|--------------|----------|" >> "$GITHUB_STEP_SUMMARY"
+        echo "| Selector | Machine Name | KAS File | KAS Basename |" >> "$GITHUB_STEP_SUMMARY"
+        echo "|---------|--------------|----------|--------------|" >> "$GITHUB_STEP_SUMMARY"
 
         build_matrix='${{ steps.set-matrix.outputs.build_matrix }}'
-        # Validate JSON and iterate
+
         echo "$build_matrix" | jq -c '.[]' | while read -r entry; do
           selector=$(echo "$entry" | jq -r '.selector')
           machine_name=$(echo "$entry" | jq -r '.machine_name')
           kas_file=$(echo "$entry" | jq -r '.kas_file')
-          echo "| ${selector} | ${machine_name} | ${kas_file} |" >> "$GITHUB_STEP_SUMMARY"
+          kas_basename=$(echo "$entry" | jq -r '.kas_basename')
+
+          echo "| ${selector} | ${machine_name} | ${kas_file} | ${kas_basename} |" >> "$GITHUB_STEP_SUMMARY"
         done
