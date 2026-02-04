@@ -1,11 +1,11 @@
 {
   "8275-evk": {
     "file_name": "meta-audioreach/ci/iq-8275-evk.yml",
-    "machine_name": "8275-evk"
+    "machine_name": "iq-8275-evk"
   },
   "9075-evk": {
     "file_name": "meta-audioreach/ci/iq-9075-evk.yml",
-    "machine_name": "9075-evk"
+    "machine_name": "iq-9075-evk"
   },
   "rb3gen2": [
     {
