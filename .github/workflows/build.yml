@@ -30,33 +30,34 @@ jobs:
       matrix:
         build_matrix: ${{ fromJson(inputs.build_matrix) }}
     steps:
-      - name: Build docker Image  # Build docker image used to build the project
+      - name: Build docker Image
         id: get-docker-image
-        uses: Audioreach/meta-audioreach/.github/actions/build_docker_image@master
+        uses: Audioreach/meta-audioreach/.github/actions/build_docker_image@process
 
       - name: Sync Codebase
         id: sync
-        uses: Audioreach/meta-audioreach/.github/actions/sync@master
+        uses: Audioreach/meta-audioreach/.github/actions/sync@process
         with:
           event_name: ${{ github.event_name }}
           pr_ref: ${{ github.event.pull_request.head.ref }}
           pr_repo: ${{ github.event.pull_request.head.repo.full_name }}
           base_ref: ${{ github.ref_name }}
 
-      - name: Build for ${{ matrix.build_matrix.machine }}
-        uses: Audioreach/meta-audioreach/.github/actions/build@master
+      # REQUIRED CHANGE ???
+      - name: Build for ${{ matrix.build_matrix.machine_name }}
+        uses: Audioreach/meta-audioreach/.github/actions/build@process
         with:
           docker_image: ${{ steps.get-docker-image.outputs.image_name }}
           kas_file: ${{ matrix.build_matrix.kas_file }}
+          machine_name: ${{ matrix.build_matrix.machine_name }}   # ? NEW REQUIRED FIELD
           build_command: ${{ inputs.build_command }}
           build_type: ${{ inputs.build_type }}
         env:
-          MACHINE: ${{ matrix.build_matrix.machine }}
+          MACHINE: ${{ matrix.build_matrix.machine_name }}        # ? UPDATED
 
       - name: Cleanup Workspace
         if: always()
         run: |
-          # Cleanup the workspace
           rm -rf ${{ github.workspace }}/../build
           rm -rf pub
           echo "Workspace cleaned up."
