@@ -9,6 +9,7 @@ on:
     paths-ignore:
       - '.github/**'
 
+
 jobs:
   load_parameters:
     uses: ./.github/workflows/loading.yml
@@ -33,7 +34,7 @@ jobs:
 
   tests:
     needs: [load_parameters, flat_build]
-    if: ${{ (success() || failure()) && !contains(needs.flat_build.result, 'skipped') }}
+    if: ${{ always() && needs.flat_build.result != 'skipped' }}
     uses: ./.github/workflows/test.yml
     secrets: inherit
     with:

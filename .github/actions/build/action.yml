@@ -11,6 +11,10 @@ inputs:
     description: KAS file to use for the build job
     required: true
 
+  machine_name:
+    description: Yocto MACHINE name to use for artifact paths
+    required: true
+
   build_command:
     description: Command to run for the build
     required: false
@@ -24,18 +28,37 @@ inputs:
 runs:
   using: "composite"
   steps:
+
+    - name: Initialize env (MACHINE, file list)
+      shell: bash
+      run: |
+        #!/bin/bash
+        set -e
+        echo "MACHINE=${{ inputs.machine_name }}" >> $GITHUB_ENV
+
+        # REQUIRED CHANGE (1): derive unique artifact_key from kas_file
+        KAS_BASE="$(basename "${{ inputs.kas_file }}")"
+        ARTIFACT_KEY="${KAS_BASE%.*}"
+        echo "ARTIFACT_KEY=${ARTIFACT_KEY}" >> $GITHUB_ENV
+
+        # >>> REQUIRED: add ARTIFACT_KEY_BASENAME for Process URLs action
+        echo "ARTIFACT_KEY_BASENAME=${ARTIFACT_KEY}" >> $GITHUB_ENV
+
+        # REQUIRED CHANGE (2): make filepath unique per variant
+        filepath="${{ github.workspace }}/${{ inputs.machine_name }}_${{ inputs.build_type }}_${ARTIFACT_KEY}_file_list.txt"
+        echo "filepath=${filepath}" >> $GITHUB_ENV
+        : > "$filepath"
+
     - name: Build ${{ env.MACHINE }}
       shell: bash
       run: |
         #!/bin/bash
         set -e
 
-        # touch file_list.txt
-        filepath="${{ github.workspace }}/${{ env.MACHINE }}_${{ inputs.build_type }}file_list.txt"
+        filepath="${{ github.workspace }}/${{ env.MACHINE }}_${{ inputs.build_type }}_${{ env.ARTIFACT_KEY }}_file_list.txt"
         echo "filepath=${filepath}" >> $GITHUB_ENV
         touch $filepath
 
-        # Define variables
         USER_ID=$(id -u)
         GROUP_ID=$(id -g)
         USER=$(whoami)
@@ -57,7 +80,6 @@ runs:
             set -e
             kas shell ${{ inputs.kas_file }} -c '
               umask 022
-              # Flat build or generate sdk build
               ${{ inputs.build_command }}
             '
           "
@@ -70,23 +92,25 @@ runs:
         #!/bin/bash
         set -ex
 
-        # Process the kas file to remove the .yml extension
         KAS_FILE="${{ inputs.kas_file }}"
         KAS_FILE="${KAS_FILE##*/}"
         KAS_FILE="${KAS_FILE%.*}"
-
+        
+        if [[ "$KAS_FILE" == "rb3gen2-core-kit-6.18" ]]; then
+            KAS_FILE="rb3gen2-core-kit"
+        fi
+        
         cd ..
         MACHINE=${{ env.MACHINE }}
         BUILD_DIR=build
         PUB_DIR=${{ github.workspace }}/pub/${MACHINE}/flat_build
-        mkdir -p $PUB_DIR
+        mkdir -p "$PUB_DIR"
 
-        cd $BUILD_DIR/tmp/deploy/images/${KAS_FILE}
-        cp qcom-multimedia-image-${KAS_FILE}.rootfs.qcomflash.tar.gz "$PUB_DIR/"
-          
-        # create file file_list
+        cd "$BUILD_DIR/tmp/deploy/images/${KAS_FILE}"
+        cp "qcom-multimedia-image-${KAS_FILE}.rootfs.qcomflash.tar.gz" "$PUB_DIR/"
+
         echo "${PUB_DIR}/qcom-multimedia-image-${KAS_FILE}.rootfs.qcomflash.tar.gz" >> ${{ env.filepath }}
-        ls -larth $PUB_DIR
+        ls -larth "$PUB_DIR"
         echo "Build artifacts created in $PUB_DIR"
 
     - name: copy the sdk to the pub directory
@@ -115,6 +139,8 @@ runs:
       env:
         MACHINE: ${{ env.MACHINE }}
         BUILD_TYPE: ${{ inputs.build_type }}
+        ARTIFACT_KEY: ${{ env.ARTIFACT_KEY }}
+        ARTIFACT_KEY_BASENAME: ${{ env.ARTIFACT_KEY_BASENAME }}   # <<< REQUIRED
 
     - name: Update Summary
       shell: bash
