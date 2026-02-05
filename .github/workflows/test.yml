@@ -87,7 +87,7 @@ jobs:
         uses: foundriesio/lava-action@v6
         with:
           lava_token: ${{ secrets.LAVATOKEN }}
-          lava_url: 'https://lava.infra.foundries.io'
+          lava_url: 'lava.infra.foundries.io'
           job_definition: ${{ steps.listjobs.outputs.target_file }}
           wait_for_job: true
           fail_action_on_failure: true
