@@ -17,22 +17,24 @@ jobs:
       fail-fast: false
       matrix:
         build_matrix: ${{ fromJson(inputs.build_matrix) }}
+
     steps:
       - name: Sync Codebase
         id: sync
-        uses: Audioreach/meta-audioreach/.github/actions/sync@master
+        uses: Audioreach/meta-audioreach/.github/actions/sync@process
         with:
           event_name: ${{ github.event_name }}
-          pr_ref: ${{ github.event.pull_request.head.ref }}
-          pr_repo: ${{ github.event.pull_request.head.repo.full_name }}
+          pr_ref:  ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.ref || '' }}
+          pr_repo: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || '' }}
           base_ref: ${{ github.ref_name }}
 
       - name: Process URLs
         id: process_urls
-        uses: Audioreach/meta-audioreach/.github/actions/process_urls@master
+        uses: Audioreach/meta-audioreach/.github/actions/process_urls@process
         env:
-          MACHINE: ${{ matrix.build_matrix.machine }}
-          
+          MACHINE: ${{ matrix.build_matrix.machine_name }}
+          ARTIFACT_KEY: ${{ matrix.build_matrix.kas_file }}
+
       - name: Print trigger
         run: |
           echo "Triggered by ${{ github.event_name }}"
@@ -41,13 +43,15 @@ jobs:
 
       - name: Modify test configurations
         id: listjobs
+        shell: bash
         run: |
           kas_file="${{ matrix.build_matrix.kas_file }}"
-          DIR_NAME="${kas_file%.yml}"
+          DIR_NAME="$(basename "$kas_file" .yml)"
           target_file="ci/lava/${DIR_NAME}/boot.yaml"
+
           if [ ! -f "$target_file" ]; then
             echo "Target file $target_file does not exist."
-            echo "target_file=" >> $GITHUB_OUTPUT
+            echo "target_file=" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -55,22 +59,28 @@ jobs:
           FIND_PATH="${TARGET#*/}"
           DEVICE_TYPE_PATH="${FIND_PATH%/*}"
           DEVICE_TYPE="${DEVICE_TYPE_PATH#*/}"
+
           GITHUB_SHA="${{ github.sha }}"
           GITHUB_RUN_ID="${{ github.run_id }}"
           BUILD_FILE_NAME="${{ steps.process_urls.outputs.filename }}"
           BUILD_DOWNLOAD_URL="${{ steps.process_urls.outputs.flat_build_url }}"
+
           sed -i "s|{{DEVICE_TYPE}}|${DEVICE_TYPE}|g" "${target_file}"
           sed -i "s|{{GITHUB_SHA}}|${GITHUB_SHA}|g" "${target_file}"
+
+          # FIXED: Remove GitHub-rendered `&amp;`
           ESCAPED_URL=$(echo "$BUILD_DOWNLOAD_URL" | sed 's/[&/?=]/\\&/g')
           sed -i "s|{{BUILD_DOWNLOAD_URL}}|$ESCAPED_URL|g" "${target_file}"
+
           sed -i "s|{{BUILD_FILE_NAME}}|${BUILD_FILE_NAME}|g" "${target_file}"
           sed -i "s|{{GITHUB_RUN_ID}}|${GITHUB_RUN_ID}|g" "${target_file}"
+
+          echo "==== Rendered LAVA job ===="
           cat "${target_file}"
 
-          echo "target_file=${target_file}" >> $GITHUB_OUTPUT
+          echo "target_file=${target_file}" >> "$GITHUB_OUTPUT"
       
-      # Submit job to LAVA
-      - name: Test ${{ matrix.build_matrix.machine }}
+      - name: Test ${{ matrix.build_matrix.machine_name }}
         if: ${{ steps.listjobs.outputs.target_file != '' }}
         id: submit_job
         timeout-minutes: 20
@@ -85,12 +95,11 @@ jobs:
           save_job_details: true
 
       - name: Update Summary
-        if: success() || failure()
+        if: ${{ always() }}
         run: |
-          if [ "${{ steps.submit_job.outcome }}" == "success" ]; then
-            echo "## Test Job Summary" >> $GITHUB_STEP_SUMMARY
-            echo ":heavy_check_mark: Test job for ${{ matrix.build_matrix.machine }} completed successfully." >> $GITHUB_STEP_SUMMARY
+          echo "## Test Job Summary" >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.submit_job.outcome }}" = "success" ]; then
+            echo ":heavy_check_mark: Test job for ${{ matrix.build_matrix.machine_name }} completed successfully." >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "## Test Job Summary" >> $GITHUB_STEP_SUMMARY
-            echo ":x: Test job for ${{ matrix.build_matrix.machine }} failed." >> $GITHUB_STEP_SUMMARY
+            echo ":x: Test job for ${{ matrix.build_matrix.machine_name }} failed." >> "$GITHUB_STEP_SUMMARY"
           fi
