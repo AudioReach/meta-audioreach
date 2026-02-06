@@ -9,6 +9,7 @@ defaults:
   repos:
     branch: master
 
+
 repos:
   oe-core:
     url: https://github.com/openembedded/openembedded-core
