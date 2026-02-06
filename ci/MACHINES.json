@@ -1,18 +1,22 @@
 {
   "8275-evk": {
     "file_name": "meta-audioreach/ci/iq-8275-evk.yml",
-    "machine_name": "8275-evk"
+    "machine_name": "8275-evk",
+    "image_name":"iq-8275-evk"
   },
   "9075-evk": {
     "file_name": "meta-audioreach/ci/iq-9075-evk.yml",
-    "machine_name": "9075-evk"
+    "machine_name": "9075-evk",
+    "image_name":"iq-9075-evk"
   },
   "rb3gen2-core-kit": {
     "file_name": "meta-audioreach/ci/rb3gen2-core-kit.yml",
-    "machine_name": "rb3gen2-core-kit"
+    "machine_name": "rb3gen2-core-kit",
+    "image_name":"rb3gen2-core-kit"
   },
   "rb3gen2-core-kit-6.18": {
     "file_name": "meta-audioreach/ci/rb3gen2-core-kit-6.18.yml",
-    "machine_name": "rb3gen2-core-kit"
+    "machine_name": "rb3gen2-core-kit",
+    "image_name":"rb3gen2-core-kit"
   }
 }
