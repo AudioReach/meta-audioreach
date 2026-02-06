@@ -59,6 +59,24 @@ actions:
         SKIP_INSTALL: "True"
         TESTS: "pwd, uname -a, ip a, dmesg"
 
+    # Audio Playback Testcases
+    - from: git
+      name: "{{DEVICE_TYPE}}-audio-playback-config01"
+      path: Runner/suites/Multimedia/Audio/AudioPlayback/AudioPlayback_Config01.yaml
+      repository: https://github.com/qualcomm-linux/qcom-linux-testkit.git
+      parameters:
+        SKIP_INSTALL: "True"
+        TESTS: "pwd, uname -a, ip a, dmesg"
+        
+	  # Audio Record Testcases
+    - from: git
+      name: "{{DEVICE_TYPE}}-audio-record-config01"
+      path: Runner/suites/Multimedia/Audio/AudioRecord/AudioRecord_Config01.yaml
+      repository: https://github.com/qualcomm-linux/qcom-linux-testkit.git
+      parameters:
+        SKIP_INSTALL: "True"
+        TESTS: "pwd, uname -a, ip a, dmesg"
+
 - command:
     name: network_turn_on
 context:
