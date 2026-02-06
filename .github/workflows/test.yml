@@ -60,6 +60,11 @@ jobs:
           DEVICE_TYPE_PATH="${FIND_PATH%/*}"
           DEVICE_TYPE="${DEVICE_TYPE_PATH#*/}"
 
+          # ---- If Device_type rb3gen2-core-kit-6.18, then making it to rb3gen2-core-kit ----
+          if [ "$DEVICE_TYPE" = "rb3gen2-core-kit-6.18" ]; then
+            DEVICE_TYPE="rb3gen2-core-kit"
+          fi
+
           GITHUB_SHA="${{ github.sha }}"
           GITHUB_RUN_ID="${{ github.run_id }}"
           BUILD_FILE_NAME="${{ steps.process_urls.outputs.filename }}"
