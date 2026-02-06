@@ -55,11 +55,14 @@ runs:
 
               // ? REQUIRED CHANGE (only change)
               const machine = obj.machine_name;
+              
+              //get image_name
+              const image = obj.image_name;
 
               if (!kas || typeof kas !== 'string') return;
 
               const kas_basename = kas.replace(/^.*\//, '').replace(/\.yml$/, '');
-              out.push({ selector, kas_file: kas, kas_basename, machine_name: machine });
+              out.push({ selector, kas_file: kas, kas_basename, machine_name: machine,image_name:image });
             };
 
             if (typeof value === 'string') {
@@ -107,8 +110,8 @@ runs:
       shell: bash
       run: |
         echo "## Build Matrix" >> "$GITHUB_STEP_SUMMARY"
-        echo "| Selector | Machine Name | KAS File | KAS Basename |" >> "$GITHUB_STEP_SUMMARY"
-        echo "|---------|--------------|----------|--------------|" >> "$GITHUB_STEP_SUMMARY"
+        echo "| Selector | Machine Name | KAS File | KAS Basename | IMAGE_NAME|" >> "$GITHUB_STEP_SUMMARY"
+        echo "|---------|--------------|----------|--------------|--------------|" >> "$GITHUB_STEP_SUMMARY"
 
         build_matrix='${{ steps.set-matrix.outputs.build_matrix }}'
 
@@ -117,6 +120,7 @@ runs:
           machine_name=$(echo "$entry" | jq -r '.machine_name')
           kas_file=$(echo "$entry" | jq -r '.kas_file')
           kas_basename=$(echo "$entry" | jq -r '.kas_basename')
+          image_name = $(echo "$entry" | jq -r '.image_name')
 
-          echo "| ${selector} | ${machine_name} | ${kas_file} | ${kas_basename} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| ${selector} | ${machine_name} | ${kas_file} | ${kas_basename} | ${image_name}|" >> "$GITHUB_STEP_SUMMARY"
         done
