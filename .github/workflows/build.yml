@@ -52,6 +52,7 @@ jobs:
           machine_name: ${{ matrix.build_matrix.machine_name }}   # ? NEW REQUIRED FIELD
           build_command: ${{ inputs.build_command }}
           build_type: ${{ inputs.build_type }}
+          image_name: ${{ matrix.build_matrix.image_name }}
         env:
           MACHINE: ${{ matrix.build_matrix.machine_name }}        # ? UPDATED
 
