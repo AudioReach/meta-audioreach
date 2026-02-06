@@ -96,9 +96,6 @@ runs:
         KAS_FILE="${KAS_FILE##*/}"
         KAS_FILE="${KAS_FILE%.*}"
         
-        if [[ "$KAS_FILE" == "rb3gen2-core-kit-6.18" ]]; then
-            KAS_FILE="rb3gen2-core-kit"
-        fi
         
         cd ..
         MACHINE=${{ env.MACHINE }}
@@ -106,8 +103,8 @@ runs:
         PUB_DIR=${{ github.workspace }}/pub/${MACHINE}/flat_build
         mkdir -p "$PUB_DIR"
 
-        cd "$BUILD_DIR/tmp/deploy/images/${KAS_FILE}"
-        cp "qcom-multimedia-image-${KAS_FILE}.rootfs.qcomflash.tar.gz" "$PUB_DIR/"
+        cd "$BUILD_DIR/tmp/deploy/images/${MACHINE}"
+        cp "qcom-multimedia-image-${MACHINE}.rootfs.qcomflash.tar.gz" "$PUB_DIR/qcom-multimedia-image-${KAS_FILE}.rootfs.qcomflash.tar.gz"
 
         echo "${PUB_DIR}/qcom-multimedia-image-${KAS_FILE}.rootfs.qcomflash.tar.gz" >> ${{ env.filepath }}
         ls -larth "$PUB_DIR"
@@ -125,8 +122,8 @@ runs:
         sdk_file=$(ls qcom-distro-*.sh)
         PUB_DIR=${{ github.workspace }}/pub/${{ env.MACHINE }}/sdk_build
         mkdir -p $PUB_DIR
-        cp $sdk_file $PUB_DIR/sdk-${MACHINE}.sh
-        echo "${PUB_DIR}/sdk-${MACHINE}.sh" >> ${{ env.filepath }}
+        cp $sdk_file $PUB_DIR/sdk-${KAS_FILE}.sh
+        echo "${PUB_DIR}/sdk-${KAS_FILE}.sh" >> ${{ env.filepath }}
         ls -larth $PUB_DIR
         echo "SDK artifacts created in $PUB_DIR"
 
