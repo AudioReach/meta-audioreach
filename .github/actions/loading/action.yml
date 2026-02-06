@@ -68,7 +68,7 @@ runs:
             if (typeof value === 'string') {
               const kas = value;
               const kas_basename = kas.replace(/^.*\//, '').replace(/\.yml$/, '');
-              out.push({ selector, kas_file: kas, kas_basename, machine_name: selector });
+              out.push({ selector, kas_file: kas, kas_basename, machine_name: selector, image_name:image });
             } else if (Array.isArray(value)) {
               value.forEach(v => pushItem(v));
             } else if (typeof value === 'object' && value) {
