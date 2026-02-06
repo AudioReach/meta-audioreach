@@ -120,7 +120,7 @@ runs:
           machine_name=$(echo "$entry" | jq -r '.machine_name')
           kas_file=$(echo "$entry" | jq -r '.kas_file')
           kas_basename=$(echo "$entry" | jq -r '.kas_basename')
-          image_name = $(echo "$entry" | jq -r '.image_name')
+          image_name=$(echo "$entry" | jq -r '.image_name')
 
           echo "| ${selector} | ${machine_name} | ${kas_file} | ${kas_basename} | ${image_name}|" >> "$GITHUB_STEP_SUMMARY"
         done
