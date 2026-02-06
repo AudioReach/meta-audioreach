@@ -59,6 +59,7 @@ actions:
         SKIP_INSTALL: "True"
         TESTS: "pwd, uname -a, ip a, dmesg"
 
+
 - command:
     name: network_turn_on
 context:
