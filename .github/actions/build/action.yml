@@ -122,6 +122,9 @@ runs:
         #!/bin/bash
         set -ex
         KAS_FILE="${{ inputs.kas_file }}"
+        KAS_FILE="${KAS_FILE##*/}"
+        KAS_FILE="${KAS_FILE%.*}"
+
         cd ..
         cd build/tmp/deploy/sdk/
         sdk_file=$(ls qcom-distro-*.sh)
