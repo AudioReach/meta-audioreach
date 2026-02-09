@@ -1,7 +1,7 @@
 SUMMARY = "AudioReach Graph Service"
 
 LICENSE = "BSD-3-Clause"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=6921cdd00790cae6b02ce61e60ab9e55"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=ef516c5438f1b599326a5e207572f477"
 
 SRCREV = "${AUTOREV}"
 PV = "1.0+git${SRCPV}"
