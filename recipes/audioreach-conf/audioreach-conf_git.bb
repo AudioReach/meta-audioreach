@@ -4,7 +4,7 @@ HOMEPAGE = "https://github.com/Audioreach/audioreach-conf"
 LICENSE = "BSD-3-Clause-Clear"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=51110a366f598bc0b8f8e59141a18efb"
 
-SRCREV = "6a02c7c70fd2821cd79c415bd084fc0ed261a304"
+SRCREV = "4ff045ad5f527de70896ce77bdcdea5ad086dc16"
 PV = "1.0+git${SRCPV}"
 
 SRC_URI = "git://github.com/Audioreach/audioreach-conf.git;protocol=https;branch=master"
