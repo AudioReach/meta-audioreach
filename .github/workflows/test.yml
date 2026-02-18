@@ -9,15 +9,54 @@ on:
         required: true
         type: string
         description: Build matrix for the test job
+      
+      # === Optional knobs for lava-test-plans ===
+      distro_name:
+        description: Default distro for lava-test-plans if not provided in matrix
+        required: false
+        type: string
+        default: qcom-distro
+      kernel:
+        description: Extra path suffix for kernel (e.g., -6.18). Default empty.
+        required: false
+        type: string
+        default: ""
+      testplan:
+        description: Test plan name to use in job generation (lava-test-plans)
+        required: false
+        type: string
+        default: pre-merge
+      prefix:
+        description: Prefix for the compressed artifact with generated jobs
+        required: false
+        type: string
+        default: testjobs
+      
+      # === LAVA server configuration ===
+      lava_url:
+        description: LAVA server URL
+        required: false
+        type: string
+        default: lava.infra.foundries.io
+      wait_for_job:
+        description: Wait for LAVA job to complete
+        required: false
+        type: boolean
+        default: true
+      fail_on_test_failure:
+        description: Fail workflow if LAVA test fails
+        required: false
+        type: boolean
+        default: false
 
 jobs:
-  test:
+ submit_lava:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         build_matrix: ${{ fromJson(inputs.build_matrix) }}
-
+    
     steps:
       - name: Sync Codebase
         id: sync
@@ -35,74 +74,81 @@ jobs:
           MACHINE: ${{ matrix.build_matrix.machine_name }}
           ARTIFACT_KEY: ${{ matrix.build_matrix.kas_file }}
 
-      - name: Print trigger
+      - name: Print trigger info
+        id: print_trigger
         run: |
           echo "Triggered by ${{ github.event_name }}"
           echo "Build URL: ${{ steps.process_urls.outputs.flat_build_url }}"
           echo "Build file name: ${{ steps.process_urls.outputs.filename }}"
+          echo "Image: ${{ matrix.build_matrix.image_name }}"
+          echo "Machine: ${{ matrix.build_matrix.machine_name }}"
+          KAS_FILE="${{ matrix.build_matrix.kas_file }}"
+          KAS_FILE="${KAS_FILE##*/}"
+          IMAGE_NAME="${KAS_FILE%.*}"
+          echo "image_name=$IMAGE_NAME" >> "$GITHUB_OUTPUT" 
+      
+      - name: Submit LAVA test job
+        id: lava_submit
+        uses: Audioreach/meta-audioreach/.github/actions/lava-test-plans@master
+        with:
+          image_name: ${{ steps.print_trigger.outputs.image_name}}
+          machine_name: ${{ matrix.build_matrix.machine_name }}
+          build_url: ${{ steps.process_urls.outputs.flat_build_url }}
+          distro_name: ${{ inputs.distro_name }}
+          kernel: ${{ inputs.kernel }}
+          testplan: ${{ inputs.testplan }}
+          prefix: ${{ inputs.prefix }}
+          lava_token: ${{ secrets.LAVATOKEN }}
+          lava_url: ${{ inputs.lava_url }}
+          wait_for_job: ${{ inputs.wait_for_job }}
+          fail_action_on_failure: ${{ inputs.fail_on_test_failure }}
+          run_id: ${{ github.run_id }}
+          run_attempt: ${{ github.run_attempt }}
+  
+ publish-test-summary:
+    name: "Publish Tests Summary"
+    needs: [submit_lava]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    permissions:
+      checks: write
+      pull-requests: write
+    outputs:
+      summary_id: ${{ steps.generate-summary.outputs.artifact_id }}
 
-      - name: Modify test configurations
-        id: listjobs
-        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate Summary
+        id: generate-summary
+        uses: Audioreach/meta-audioreach/.github/actions/test-job-summary@master
+        with:
+          build_id: ${{ github.run_id }}
+          gh_token: ${{ secrets.GITHUB_TOKEN }}
+          summary_file_name: test_job_summary
+      
+      # Download ALL matching summary artifacts from parallel jobs and put into one folder.
+      - name: Download Summaries
+        uses: actions/download-artifact@v6
+        with:
+          pattern: test_job_summary*          # match all parallel summaries
+          merge-multiple: true                # place all matched artifact contents into a single folder
+          path: summaries
+
+      - name: Publish Test Job Details
         run: |
-          kas_file="${{ matrix.build_matrix.kas_file }}"
-          DIR_NAME="$(basename "$kas_file" .yml)"
-          target_file="ci/lava/${DIR_NAME}/boot.yaml"
-
-          if [ ! -f "$target_file" ]; then
-            echo "Target file $target_file does not exist."
-            echo "target_file=" >> "$GITHUB_OUTPUT"
+          shopt -s nullglob
+          files=(summaries/test_job_summary*)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo ":warning: No test job summaries were found to publish." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
 
-          TARGET=${target_file}
-          FIND_PATH="${TARGET#*/}"
-          DEVICE_TYPE_PATH="${FIND_PATH%/*}"
-          DEVICE_TYPE="${DEVICE_TYPE_PATH#*/}"
-
-          # ---- If device type has kernel suffix (6.18), normalize to base device type ----
-          if [ "$DEVICE_TYPE" = "rb3gen2-core-kit-6.18" ]; then
-            DEVICE_TYPE="rb3gen2-core-kit"
-          fi
-
-          GITHUB_SHA="${{ github.sha }}"
-          GITHUB_RUN_ID="${{ github.run_id }}"
-          BUILD_FILE_NAME="${{ steps.process_urls.outputs.filename }}"
-          BUILD_DOWNLOAD_URL="${{ steps.process_urls.outputs.flat_build_url }}"
-
-          sed -i "s|{{DEVICE_TYPE}}|${DEVICE_TYPE}|g" "${target_file}"
-          sed -i "s|{{GITHUB_SHA}}|${GITHUB_SHA}|g" "${target_file}"
-
-          ESCAPED_URL=$(echo "$BUILD_DOWNLOAD_URL" | sed 's/[&/?=]/\\&/g')
-          sed -i "s|{{BUILD_DOWNLOAD_URL}}|$ESCAPED_URL|g" "${target_file}"
-
-          sed -i "s|{{BUILD_FILE_NAME}}|${BUILD_FILE_NAME}|g" "${target_file}"
-          sed -i "s|{{GITHUB_RUN_ID}}|${GITHUB_RUN_ID}|g" "${target_file}"
-
-          cat "${target_file}"
-
-          echo "target_file=${target_file}" >> "$GITHUB_OUTPUT"
-      
-      - name: Test ${{ matrix.build_matrix.machine_name }}
-        if: ${{ steps.listjobs.outputs.target_file != '' }}
-        id: submit_job
-        timeout-minutes: 20
-        uses: foundriesio/lava-action@v6
-        with:
-          lava_token: ${{ secrets.LAVATOKEN }}
-          lava_url: 'lava.infra.foundries.io'
-          job_definition: ${{ steps.listjobs.outputs.target_file }}
-          wait_for_job: true
-          fail_action_on_failure: true
-          save_result_as_artifact: true
-          save_job_details: true
-
-      - name: Update Summary
-        if: ${{ always() }}
-        run: |
-          echo "## Test Job Summary" >> "$GITHUB_STEP_SUMMARY"
-          if [ "${{ steps.submit_job.outcome }}" = "success" ]; then
-            echo ":heavy_check_mark: Test job for ${{ matrix.build_matrix.machine_name }} completed successfully." >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo ":x: Test job for ${{ matrix.build_matrix.machine_name }} failed." >> "$GITHUB_STEP_SUMMARY"
-          fi
+          echo "## LAVA Test Job Summaries" >> "$GITHUB_STEP_SUMMARY"
+          for f in "${files[@]}"; do
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "### $(basename "$f")" >> "$GITHUB_STEP_SUMMARY"
+            cat "$f" >> "$GITHUB_STEP_SUMMARY"
+          done

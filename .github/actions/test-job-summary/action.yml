@@ -1,0 +1,228 @@
+name: LAVA test job summary
+description: "Download LAVA job artifacts, build a Markdown summary, and upload it as a workflow artifact"
+
+inputs:
+  build_id:
+    description: "ID of the workflow from which build URL will be downloaded"
+    required: true
+  gh_token:
+    description: "Github token. It's required to download artifacts from the workflow"
+    required: true
+  prefix:
+    description: "Prefix for the compressed file that is uploaded as workflow artifact"
+    default: test-job
+  summary_file_name:
+    description: "File name that is used to save test job summary"
+    default: step-summary.txt
+
+outputs:
+  artifact_id:
+    description: "ID of the uploaded artifact"
+    value: ${{ steps.upload-summary.outputs.artifact-id }}
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: Download Artifacts
+      uses: actions/download-artifact@v6
+      with:
+        github-token: ${{ inputs.gh_token }}
+        run-id: ${{ inputs.build_id }}
+        path: artifacts
+        pattern: test-job*
+        merge-multiple: true
+
+    - name: List files
+      shell: bash
+      run: |
+        set -Eeuo pipefail
+        echo "$GITHUB_WORKSPACE"
+        ls -R "$GITHUB_WORKSPACE"
+
+    - name: Publish Test Job Details
+      shell: bash
+      env:
+        PREFIX: ${{ inputs.prefix }}
+        SUMMARY_FILE: ${{ inputs.summary_file_name }}
+      run: |
+        set -Eeuo pipefail
+
+        # Python block: reads values from environment, not from direct ${{ }} interpolation.
+        python3 << 'PY'
+        import json, os, sys, requests
+
+        BASE = "https://lava.infra.foundries.io"
+
+        def fetch(url):
+            try:
+                # TLS verification is ON by default (recommended).
+                r = requests.get(url, timeout=30)
+                r.raise_for_status()
+                return r.json()
+            except Exception as e:
+                print(f"Error fetching {url}: {e}", file=sys.stderr)
+                return None
+
+        def fetch_job_details(job_id):
+            return fetch(f"{BASE}/api/v0.2/jobs/{job_id}/")
+
+        def fetch_job_suites(job_id):
+            return fetch(f"{BASE}/api/v0.2/jobs/{job_id}/suites/")
+
+        def fetch_suite_tests(job_id, suite_id):
+            return fetch(f"{BASE}/api/v0.2/jobs/{job_id}/suites/{suite_id}/tests/")
+
+        def process_test_job(test_job_file):
+            print(f"Processing: {test_job_file}")
+            with open(test_job_file, 'r') as f:
+                job_data = json.load(f)
+
+            job_id = job_data.get('id')
+            if not job_id:
+                return None
+
+            print(f"  Job ID: {job_id}")
+            job_details = fetch_job_details(job_id)
+            if not job_details:
+                return None
+
+            job_health = job_details.get('health')
+            job_state = job_details.get('state')
+            job_device_type = job_details.get('requested_device_type')
+            job_url = f"{BASE}/results/{job_id}"
+
+            print(f"  State: {job_state}, Health: {job_health}, Device: {job_device_type}")
+
+            test_results = {}
+
+            if job_state == "Finished" and job_health == "Complete":
+                suites_data = fetch_job_suites(job_id)
+                if not suites_data:
+                    return None
+
+                suites = suites_data.get('results', [])
+                for suite in suites:
+                  suite_name = suite.get('name')
+                  suite_id = suite.get('id')
+                  suite_tests = fetch_suite_tests(job_id, suite_id)
+                  if not suite_tests:
+                      continue
+                  tests = suite_tests.get('results', [])
+
+                  if suite_name != "lava":
+                      for test in tests:
+                          test_name = test.get('name')
+                          test_result = test.get('result')
+                          if test_name:
+                              test_results[test_name] = {
+                                  'result': test_result,
+                                  'url': job_url
+                              }
+                  else:
+                      # Keep the original special-case for "boot"
+                      test_results['boot'] = {
+                          'result': 'pass',
+                          'url': job_url
+                      }
+
+            return {
+                'device_type': job_device_type,
+                'test_results': test_results,
+                'job_id': job_id
+            }
+
+        def generate_summary_table(job_results, summary_file):
+            if not job_results:
+                print("No results to display")
+                return
+
+            all_test_names = set()
+            for _, job_info in job_results:
+                all_test_names.update(job_info['test_results'].keys())
+            test_names = sorted(all_test_names)
+
+            lines = []
+            lines.append("# LAVA Test Job Results Summary")
+            lines.append("")
+            lines.append(f"**Total Jobs Processed:** {len(job_results)}")
+            lines.append("")
+            header = "| Test |" + "".join(f" {job_info['device_type']} |" for _, job_info in job_results)
+            lines.append(header)
+            lines.append("| ---- |" + " ---- |" * len(job_results))
+
+            for test_name in test_names:
+                row = f"| {test_name} |"
+                for _, job_info in job_results:
+                    job_url = f"{BASE}/results/{job_info['job_id']}"
+                    result = job_info['test_results'].get(test_name, {}).get('result')
+                    if result == 'pass':
+                        icon = ":white_check_mark:"
+                    elif result == 'fail':
+                        icon = ":x:"
+                    elif result == 'skip':
+                        icon = ":warning:"
+                    else:
+                        icon = ":no_entry_sign:"
+                    row += f" [{icon}]({job_url}) |"
+                lines.append(row)
+
+            print("\n".join(lines))
+            with open(summary_file, 'w') as f:
+                f.write("\n".join(lines) + "\n")
+            print(f"\nSummary written to: {summary_file}")
+
+        workspace = os.environ.get("GITHUB_WORKSPACE", ".")
+        prefix = os.environ.get("PREFIX", "test-job")
+        summary_file = os.environ.get("SUMMARY_FILE", "step-summary.txt")
+
+        print(f"Workspace: {workspace}")
+        print(f"Looking for files matching: {prefix}*.json")
+        print("=" * 80)
+
+        # Collect test job files
+        test_job_files = []
+        for root, _, files in os.walk(workspace):
+            for file in files:
+                if file.startswith(prefix) and file.endswith('.json'):
+                    test_job_files.append(os.path.join(root, file))
+
+        if not test_job_files:
+            print("No test job files found", file=sys.stderr)
+            sys.exit(1)
+
+        job_results = []
+        for test_job_file in test_job_files:
+            result = process_test_job(test_job_file)
+            if result:
+                job_results.append((test_job_file, result))
+            print()
+
+        generate_summary_table(job_results, summary_file)
+        PY
+
+        # Append "All jobs summary" safely using env vars and safe iteration
+        {
+          echo "### All jobs summary"
+          echo
+          echo "| Job ID | Device | State | Health |"
+          echo "| ---- | ---- | ---- | ---- |"
+        } >> "$SUMMARY_FILE"
+
+        # Safe file iteration: null-delimited to avoid word-splitting/globbing
+        while IFS= read -r -d '' TESTJOB; do
+          JOB_ID=$(jq -r '.id' < "$TESTJOB")
+          JOB_URL="https://lava.infra.foundries.io/results/$JOB_ID"
+          JOB_DETAILS=$(curl -fsSL "https://lava.infra.foundries.io/api/v0.2/jobs/$JOB_ID/")
+          JOB_HEALTH=$(jq -r '.health' <<<"$JOB_DETAILS")
+          JOB_STATE=$(jq -r '.state' <<<"$JOB_DETAILS")
+          JOB_DEVICE_TYPE=$(jq -r '.requested_device_type' <<<"$JOB_DETAILS")
+          printf '| [%s](%s) | %s | %s | %s |\n' "$JOB_ID" "$JOB_URL" "$JOB_DEVICE_TYPE" "$JOB_STATE" "$JOB_HEALTH" >> "$SUMMARY_FILE"
+        done < <(find "$GITHUB_WORKSPACE" -type f -name "${PREFIX}"'*.json' -print0)
+
+    - name: Upload summary
+      id: upload-summary
+      uses: actions/upload-artifact@v6
+      with:
+        path: ${{ inputs.summary_file_name }}
+        name: ${{ inputs.summary_file_name }}

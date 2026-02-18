@@ -1,0 +1,253 @@
+name: 'LAVA Test Submit'
+description: 'Generate and submit LAVA test jobs using lava-test-plans'
+
+inputs:
+  # Build matrix item
+  image_name:
+    description: 'Image name for the build'
+    required: true
+  machine_name:
+    description: 'Machine name for the build'
+    required: true
+  
+  # Build URL
+  build_url:
+    description: 'Presigned URL for the build artifact'
+    required: true
+  
+  # LAVA configuration
+  distro_name:
+    description: 'Distribution name for lava-test-plans'
+    required: false
+    default: 'qcom-distro'
+  kernel:
+    description: 'Extra path suffix for kernel (e.g., -6.18)'
+    required: false
+    default: ''
+  testplan:
+    description: 'Test plan name to use in job generation'
+    required: false
+    default: 'pre-merge'
+  prefix:
+    description: 'Prefix for the compressed artifact with generated jobs'
+    required: false
+    default: 'testjobs'
+  
+  # LAVA server credentials
+  lava_token:
+    description: 'LAVA authentication token'
+    required: true
+  lava_url:
+    description: 'LAVA server URL'
+    required: false
+    default: 'lava.infra.foundries.io'
+  
+  # Job submission options
+  wait_for_job:
+    description: 'Wait for LAVA job to complete'
+    required: false
+    default: 'true'
+  fail_action_on_failure:
+    description: 'Fail action if LAVA job fails'
+    required: false
+    default: 'false'
+  
+  # GitHub context
+  run_id:
+    description: 'GitHub run ID'
+    required: true
+  run_attempt:
+    description: 'GitHub run attempt'
+    required: true
+
+outputs:
+  jobs_path:
+    description: 'Path to generated LAVA job files'
+    value: ${{ steps.generate-jobs.outputs.jobs_path }}
+  first_job:
+    description: 'Path to the first generated job file'
+    value: ${{ steps.generate-jobs.outputs.first_job }}
+  artifact_name:
+    description: 'Name of the uploaded artifact'
+    value: ${{ steps.generate-jobs.outputs.artifact_name }}
+  lava_job_id:
+    description: 'LAVA job ID (if submitted)'
+    value: ${{ steps.submit-job.outputs.job_id }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout lava-test-plans
+      uses: actions/checkout@v5
+      with:
+        repository: qualcomm-linux-stg/lava-test-plans
+        path: lava-test-plans
+        ref: master
+
+    - name: Setup Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.11'
+
+    - name: Generate LAVA test jobs
+      id: generate-jobs
+      shell: bash
+      env:
+        DISTRO_NAME: ${{ inputs.distro_name }}
+        TESTPLAN_INPUT: ${{ inputs.testplan }}
+        IMAGE_NAME: ${{ inputs.image_name }}
+        MACHINE_NAME: ${{ inputs.machine_name }}
+        BUILD_URL: ${{ inputs.build_url }}
+        RUN_ID: ${{ inputs.run_id }}
+        RUN_ATTEMPT: ${{ inputs.run_attempt }}
+        PREFIX: ${{ inputs.prefix }}
+      run: |
+        set -euo pipefail
+        cd lava-test-plans && pip install .
+        pip install requests urllib3
+        lava-test-plans --version
+        cd "${GITHUB_WORKSPACE}"
+
+        OUT_PATH="${GITHUB_WORKSPACE}/out"
+        VARS_OUT_PATH="${OUT_PATH}/vars"
+        JOBS_OUT_PATH="${OUT_PATH}/jobs"
+        echo "jobs_path=${JOBS_OUT_PATH}" >> "$GITHUB_OUTPUT"
+        mkdir -p "${VARS_OUT_PATH}" "${JOBS_OUT_PATH}"
+
+        # === Plan roots as in the installed package ===
+        PROJECT="meta-qcom"
+
+        # Map testplan input to a plan directory
+        case "$TESTPLAN_INPUT" in
+          boot)  TESTPLAN_DIR="boot" ;;
+          pre-merge|pre-merge-basic|pre-merge-bt) TESTPLAN_DIR="pre-merge" ;;
+          *)     TESTPLAN_DIR="$TESTPLAN_INPUT" ;;
+        esac
+
+        echo "Using lava-test-plans project: ${PROJECT}"
+        echo "Resolved: MACHINE=${MACHINE_NAME}, DISTRO_NAME=${DISTRO_NAME}, TESTPLAN_DIR=${TESTPLAN_DIR}"
+
+        TESTPLAN_DIR_ABS="lava-test-plans/lava_test_plans/testplans/${PROJECT}/${DISTRO_NAME}/${TESTPLAN_DIR}"
+        if [ ! -d "${TESTPLAN_DIR_ABS}" ]; then
+          echo "ERROR: Test plan directory not found: ${TESTPLAN_DIR_ABS}"
+          ls -al "lava-test-plans/lava_test_plans/testplans/${PROJECT}/${DISTRO_NAME}" || true
+          exit 1
+        fi
+
+        # Create variables file
+        {
+          echo "PROJECT_NAME=${PROJECT}"
+          echo "PROJECT=projects/${PROJECT}/"
+          echo "LAVA_JOB_PRIORITY=50"
+          echo "OS_INFO=qcom-distro"
+          echo "BUILD_NUMBER=${RUN_ID}-${RUN_ATTEMPT}"
+          echo "DOCKER_IMAGE_POSTPROCESS=ghcr.io/foundriesio/lava-lmp-sign:main"
+          echo "AUTH_HEADER_NAME=Authentication"
+          echo "AUTH_HEADER_TOKEN=Q_GITHUB_TOKEN"
+          echo "TEST_DEFINITIONS_REPOSITORY=https://github.com/qualcomm-linux/qcom-linux-testkit/"
+          echo "FLASHER_DEVICE_TYPE=qcs"
+        } >> "${VARS_OUT_PATH}/gh-variables.ini"
+
+        IMAGE_TYPE="core-image-base"
+        if [ "${DISTRO_NAME}" = "qcom-distro" ]; then
+          IMAGE_TYPE="qcom-multimedia-image"
+          echo "AUTO_LOGIN_PASSWORD_PROMPT=Password" >> "${VARS_OUT_PATH}/gh-variables.ini"
+          echo "AUTO_LOGIN_PASSWORD=oelinux123"     >> "${VARS_OUT_PATH}/gh-variables.ini"
+        fi
+        echo "IMAGE_FILE_NAME=${IMAGE_TYPE}-${IMAGE_NAME}.rootfs.qcomflash.tar.gz" >> "${VARS_OUT_PATH}/gh-variables.ini"
+
+        # Use the presigned URL as-is
+        if [ -z "${BUILD_URL}" ]; then
+          echo "BUILD_URL missing"
+          exit 1
+        fi
+        echo "BUILD_DOWNLOAD_URL=${BUILD_URL}" >> "${VARS_OUT_PATH}/gh-variables.ini"
+        echo "ROOTFS_URL=${BUILD_URL}" >> "${VARS_OUT_PATH}/gh-variables.ini"
+        echo "DEVICE_TYPE=${IMAGE_NAME}" >> "${VARS_OUT_PATH}/gh-variables.ini"
+
+        echo "==== gh-variables.ini ===="
+        cat "${VARS_OUT_PATH}/gh-variables.ini"
+
+        # Generate jobs
+        lava-test-plans \
+          --dry-run \
+          --variables "${VARS_OUT_PATH}/gh-variables.ini" \
+          --test-plan "${PROJECT}/${DISTRO_NAME}/${TESTPLAN_DIR}" \
+          --device-type "projects/${PROJECT}/devices/${MACHINE_NAME}" \
+          --dry-run-path "${JOBS_OUT_PATH}/${IMAGE_NAME}-${DISTRO_NAME}-${TESTPLAN_DIR}" || true
+
+        # Expose the subdir where jobs were generated
+        JOBS_SUBDIR="${JOBS_OUT_PATH}/${IMAGE_NAME}-${DISTRO_NAME}-${TESTPLAN_DIR}"
+
+        # Find the first YAML job
+        FIRST_JOB=$(find "${JOBS_SUBDIR}" -type f -name '*.yaml' | sort | head -n 1 || true)
+        echo "first_job=${FIRST_JOB:-}" >> "$GITHUB_OUTPUT"
+        if [ -z "${FIRST_JOB:-}" ]; then
+          echo "WARNING: No YAMLs generated by lava-test-plans in ${JOBS_SUBDIR}"
+        else
+          echo "First generated job: ${FIRST_JOB}"
+        fi
+
+        # Artifact name for upload
+        ARTIFACT_NAME="${PREFIX}-${IMAGE_NAME}-${DISTRO_NAME}"
+        echo "artifact_name=${ARTIFACT_NAME}" >> "$GITHUB_OUTPUT"
+
+    - name: List generated files
+      shell: bash
+      env:
+        JOBS_PATH: ${{ steps.generate-jobs.outputs.jobs_path }}
+      run: |
+        echo "Generated LAVA test jobs:"
+        ls -R "$JOBS_PATH"
+
+    - name: Upload test jobs artifact
+      uses: actions/upload-artifact@v6
+      with:
+        name: ${{ steps.generate-jobs.outputs.artifact_name }}
+        path: ${{ steps.generate-jobs.outputs.jobs_path }}/**
+
+    - name: Submit first job to LAVA
+      id: submit-job
+      if: ${{ steps.generate-jobs.outputs.first_job != '' }}
+      uses: foundriesio/lava-action@v9
+      with:
+        lava_token: ${{ inputs.lava_token }}
+        lava_url: ${{ inputs.lava_url }}
+        job_definition: ${{ steps.generate-jobs.outputs.first_job }}
+        wait_for_job: ${{ inputs.wait_for_job }}
+        fail_action_on_failure: ${{ inputs.fail_action_on_failure }}
+        save_result_as_artifact: true
+        save_job_details: true
+        result_file_name: ${{ inputs.image_name }}
+
+    - name: Update summary
+      if: always()
+      shell: bash
+      env:
+        IMAGE_NAME: ${{ inputs.image_name }}
+        MACHINE_NAME: ${{ inputs.machine_name }}
+        TESTPLAN: ${{ inputs.testplan }}
+        OUTCOME: ${{ steps.submit-job.outcome }}
+        FIRST_JOB: ${{ steps.generate-jobs.outputs.first_job }}
+      run: |
+        OUTCOME="${OUTCOME:-skipped}"
+
+        echo "## LAVA Test Job Summary" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        echo "**Image:** \`$IMAGE_NAME\`" >> "$GITHUB_STEP_SUMMARY"
+        echo "**Machine:** \`$MACHINE_NAME\`" >> "$GITHUB_STEP_SUMMARY"
+        echo "**Test Plan:** \`$TESTPLAN\`" >> "$GITHUB_STEP_SUMMARY"
+        echo "" >> "$GITHUB_STEP_SUMMARY"
+        
+        if [ "$OUTCOME" = "success" ]; then
+          echo ":heavy_check_mark: LAVA job submitted successfully" >> "$GITHUB_STEP_SUMMARY"
+        elif [ "$OUTCOME" = "skipped" ]; then
+          echo ":warning: LAVA job submission was skipped (no jobs generated)" >> "$GITHUB_STEP_SUMMARY"
+        else
+          echo ":x: LAVA job submission failed" >> "$GITHUB_STEP_SUMMARY"
+        fi
+        
+        if [ -n "$FIRST_JOB" ]; then
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Submitted Job:** \`$FIRST_JOB\`" >> "$GITHUB_STEP_SUMMARY"
+        fi
