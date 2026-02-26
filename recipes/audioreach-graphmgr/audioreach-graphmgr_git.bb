@@ -16,8 +16,12 @@ DEPENDS:append = "${@bb.utils.contains('EXTRA_OECONF', '--with-no-ipc', '', ' db
 
 EXTRA_OECONF += "--with-glib --with-syslog"
 EXTRA_OECONF:append:qcom = " --with-no-ipc"
-SOLIBS = ".so"
+# tinyalsa uses dlopen() to load the unversioned AGM .so at runtime
+# (see tinyalsa/src/snd_card_plugin.c), so the unversioned .so must be
+# included in the runtime package.
+SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""
+INSANE_SKIP:${PN} += "dev-so"
 
 do_install:append () {
     if ${@bb.utils.contains('EXTRA_OECONF', '--with-no-ipc', 'false', 'true', d)}; then
