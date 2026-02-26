@@ -33,20 +33,23 @@ runs:
 
       - name: "List files"
         shell: bash
+        env:
+            WORKSPACE: "${{ github.workspace }}"
         run: |
           set -euo pipefail
-          echo "$GITHUB_WORKSPACE"
-          ls -R "$GITHUB_WORKSPACE"
+          echo "Workspace: ${WORKSPACE}"
+          ls -R -- "${WORKSPACE}"
 
       - name: Publish Test Job Details
         shell: bash
         env:
+          WORKSPACE: "${{ github.workspace }}"
           PREFIX: ${{ inputs.prefix }}
           SUMMARY_FILE: ${{ inputs.summary_file_name }}
         run: |
           set -euo pipefail
 
-          echo "$GITHUB_WORKSPACE"
+          echo "Workspace: ${WORKSPACE}"
           ls -lrt "$GITHUB_WORKSPACE"
           echo "fetching test jobs"
           python3 << 'EOF'
@@ -121,23 +124,28 @@ runs:
                       return None
                   
                   suites = suites_data.get('results', [])
+                  print(f"  Found {len(suites)} suites")
                   
                   for suite in suites:
                       suite_name = suite.get('name')
                       suite_id = suite.get('id')
-                      
+                      print(f"    Processing suite: {suite_name} (ID: {suite_id})")
                       suite_tests = fetch_suite_tests(job_id, suite_id)
                       if not suite_tests:
+                          print(f"      No tests data returned for suite {suite_name}")
                           continue
                       
                       tests = suite_tests.get('results', [])
-                      
+                      print(f"      Found {len(tests)} tests in suite {suite_name}")
                       if suite_name != "lava":
                           for test in tests:
                               test_name = test.get('name')
                               test_result = test.get('result')
+                              print(f"        Test: {test_name} = {test_result}")
+                              print(f"        Test: {test_name} = {test_result}")
                               if test_name:
-                                  test_results[test_name] = {
+                                  full_test_name = f"{suite_name}.{test_name}"
+                                  test_results[full_test_name] = {
                                       'result': test_result,
                                       'url': job_url
                                   }
@@ -146,7 +154,12 @@ runs:
                               'result': 'pass',
                               'url': job_url
                           }
+              else:
+                print(f"  Skipping - Job not finished or not complete")
               
+
+              print(f"  Total test results collected: {len(test_results)}")
+
               return {
                   'device_type': job_device_type,
                   'test_results': test_results,
@@ -193,6 +206,7 @@ runs:
                       
                       if test_name in test_results:
                           result = test_results[test_name].get('result', '')
+                          test_url = test_results[test_name].get('url', job_url)
                           
                           if result == 'pass':
                               checkmark = ":white_check_mark:"
@@ -203,7 +217,7 @@ runs:
                           else:
                               checkmark = ":no_entry_sign:"
                           
-                          row += f" {checkmark} |"
+                          row += f" [{checkmark}]({test_url}) |"
                       else:
                           row += f" :no_entry_sign: |"
                   
@@ -221,8 +235,8 @@ runs:
               print(f"\nSummary written to: {summary_file}")
           
           # Main execution
-          workspace = os.environ.get("GITHUB_WORKSPACE", ".")
-          prefix = os.environ.get("PREFIX", "test-job")
+          workspace = os.environ.get("WORKSPACE", "")
+          prefix = os.environ.get("PREFIX", "")
           summary_file = os.environ.get("SUMMARY_FILE", "step-summary.txt")
           
           print(f"Workspace: {workspace}")
@@ -253,23 +267,40 @@ runs:
           # Generate summary
           generate_summary_table(job_results, summary_file)
           EOF
+          # --- Append the "All jobs summary" table (safe & quoted) ---
+          # Ensure jq and curl exist (optional quick check)
+          if ! command -v jq >/dev/null 2>&1; then
+            echo "jq is required but not found on PATH." >&2
+            exit 1
+          fi
+          if ! command -v curl >/dev/null 2>&1; then
+            echo "curl is required but not found on PATH." >&2
+            exit 1
+          fi
           
           {
-            echo "### All jobs summary"
-            echo ""
-            echo "| Job ID | Device | State | Health |"
-            echo "| ---- | ---- | ---- | ---- |"
-          } >> "$SUMMARY_FILE"
+            printf '### All jobs summary\n'
+            printf '\n'
+            printf '| Job ID | Device | State | Health |\n'
+            printf '| ---- | ---- | ---- | ---- |\n'
+          } >> "${SUMMARY_FILE}"
 
           # Find files and append to summary (safe quoting)
-          for TESTJOB in $(find "$GITHUB_WORKSPACE" -name "${PREFIX}*.json"); do
-              JOB_ID=$(jq -r ".id" "$TESTJOB")
+          find "${WORKSPACE}" -type f -name "${PREFIX}*.json" -print0 \
+          | while IFS= read -r -d '' TESTJOB; do
+              JOB_ID="$(jq -r '.id' -- "${TESTJOB}")"
+              [ -n "${JOB_ID}" ] || continue
               JOB_URL="https://lava.infra.foundries.io/results/$JOB_ID"
-              JOB_DETAILS=$(curl -s "https://lava.infra.foundries.io/api/v0.2/jobs/$JOB_ID/")
-              JOB_HEALTH=$(echo "$JOB_DETAILS" | jq -r ".health")
-              JOB_STATE=$(echo "$JOB_DETAILS" | jq -r ".state")
-              JOB_DEVICE_TYPE=$(echo "$JOB_DETAILS" | jq -r ".requested_device_type")
-              echo "| $JOB_ID | $JOB_DEVICE_TYPE | $JOB_STATE | $JOB_HEALTH |" >> "$SUMMARY_FILE"
+              JOB_DETAILS="$(curl -fsSL --retry 3 --retry-delay 2 --max-time 30 "https://lava.infra.foundries.io/api/v0.2/jobs/${JOB_ID}/" || true)"
+              if [ -z "${JOB_DETAILS}" ]; then
+                # Print a row indicating fetch failure
+                printf '| [%s](%s) | %s | %s | %s |\n' "${JOB_ID}" "${JOB_URL}" "?" "?" "fetch_error" >> "${SUMMARY_FILE}"
+                continue
+              fi
+              JOB_HEALTH="$(printf '%s' "${JOB_DETAILS}" | jq -r '.health // "?"')"
+              JOB_STATE="$(printf '%s' "${JOB_DETAILS}" | jq -r '.state // "?"')"
+              JOB_DEVICE_TYPE="$(printf '%s' "${JOB_DETAILS}" | jq -r '.requested_device_type // "?"')"
+              printf '| [%s](%s) | %s | %s | %s |\n' "${JOB_ID}" "${JOB_URL}" "${JOB_DEVICE_TYPE}" "${JOB_STATE}" "${JOB_HEALTH}" >> "${SUMMARY_FILE}"
           done
 
       - name: Upload summary

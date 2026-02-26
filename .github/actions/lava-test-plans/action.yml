@@ -50,7 +50,7 @@ inputs:
   fail_action_on_failure:
     description: 'Fail action if LAVA job fails'
     required: false
-    default: 'false'
+    default: true
   
   # GitHub context
   run_id:
@@ -146,6 +146,7 @@ runs:
           echo "AUTH_HEADER_TOKEN=Q_GITHUB_TOKEN"
           echo "TEST_DEFINITIONS_REPOSITORY=https://github.com/qualcomm-linux/qcom-linux-testkit/"
           echo "FLASHER_DEVICE_TYPE=qcs"
+          echo "AUDIO_CLIPS_BASE_DIR=/home/AudioClips/"
         } >> "${VARS_OUT_PATH}/gh-variables.ini"
 
         IMAGE_TYPE="core-image-base"
