@@ -26,7 +26,7 @@ inputs:
     default: ''
   testplan:
     description: 'Test plan name to use in job generation'
-    required: false
+    required: true
     default: 'pre-merge'
   prefix:
     description: 'Prefix for the compressed artifact with generated jobs'
@@ -82,7 +82,7 @@ runs:
       with:
         repository: qualcomm-linux-stg/lava-test-plans
         path: lava-test-plans
-        ref: master
+        ref: Pre-merge-repo
 
     - name: Setup Python
       uses: actions/setup-python@v6
@@ -121,6 +121,7 @@ runs:
         case "$TESTPLAN_INPUT" in
           boot)  TESTPLAN_DIR="boot" ;;
           pre-merge|pre-merge-basic|pre-merge-bt) TESTPLAN_DIR="pre-merge" ;;
+          post-merge|post-merge-*|post-merge*) TESTPLAN_DIR="post-merge" ;;
           *)     TESTPLAN_DIR="$TESTPLAN_INPUT" ;;
         esac
 

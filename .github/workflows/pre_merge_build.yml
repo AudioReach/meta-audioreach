@@ -1,12 +1,23 @@
 ---
 name: pre_merge_build
-run-name: Pre Merge Build ${{ github.event.pull_request.number != '' && github.event.pull_request.number || '' }}
+run-name: >-
+  ${{ github.event_name == 'pull_request_target'
+        && format('Pre Merge Build PR #{0}', github.event.pull_request.number)
+        || 'Pre Merge Build' }}
+
 on:
   workflow_dispatch:
+    inputs:
+      testplan:
+        description: 'Test plan name to use in job generation (lava-test-plans)'
+        required: false
+        type: string
+        default: 'pre-merge'
+
   pull_request_target: # requiring access to base repo
     types: [opened, synchronize, reopened]
     branches:
-      - master
+      - post
     paths-ignore:
       - '.github/**'
 
@@ -32,40 +43,44 @@ jobs:
       - id: filter
         shell: bash
         run: |
-            MATRIX='${{ needs.load_parameters.outputs.build_matrix }}'
+          set -euo pipefail
 
-            echo "RAW build_matrix:"
-            echo "$MATRIX"
+          MATRIX='${{ needs.load_parameters.outputs.build_matrix }}'
 
-            echo "Validating JSON..."
-            echo "$MATRIX" | jq . >/dev/null
+          echo "RAW build_matrix:"
+          echo "$MATRIX"
 
-            # Supports:
-            # 1) object keyed by name: { "name": {testing_enabled:true}, ... }
-            # 2) array of entries: [ {Testing_enabled:true,...}, ... ]  (will convert to include list)
-            FILTERED=$(
-              echo "$MATRIX" | jq -c '
-                if type == "object" then
-                  to_entries
-                  | map(select(.value.testing_enabled == true))
-                  | from_entries
-                elif type == "array" then
-                  map(select(.testing_enabled == true))  # <-- Just return the array
-                else
-                  error("Unsupported build_matrix JSON type: " + (type|tostring))
-                end
-              '
-            )
+          echo "Validating JSON..."
+          echo "$MATRIX" | jq . >/dev/null
 
-            echo "Filtered matrix (pretty):"
-            echo "$FILTERED" | jq .
+          # Supports:
+          # 1) object keyed by name: { "name": {testing_enabled:true}, ... }
+          # 2) array of entries: [ {testing_enabled:true,...}, ... ]  (will convert to include list)
+          FILTERED=$(
+            echo "$MATRIX" | jq -c '
+              if type == "object" then
+                to_entries
+                | map(select(.value.testing_enabled == true))
+                | from_entries
+              elif type == "array" then
+                map(select(.testing_enabled == true))  # <-- Just return the array
+              else
+                error("Unsupported build_matrix JSON type: " + (type|tostring))
+              end
+            '
+          )
 
-            echo "test_matrix=$FILTERED" >> "$GITHUB_OUTPUT"
+          echo "Filtered matrix (pretty):"
+          echo "$FILTERED" | jq .
+
+          echo "test_matrix=$FILTERED" >> "$GITHUB_OUTPUT"
 
   tests:
-    needs: [load_parameters, flat_build,filter_test_matrix]
+    needs: [load_parameters, flat_build, filter_test_matrix]
     if: ${{ (success() || failure()) && !contains(needs.flat_build.result, 'skipped') }}
     uses: ./.github/workflows/test.yml
     secrets: inherit
     with:
       build_matrix: ${{ needs.filter_test_matrix.outputs.test_matrix }}
+      # Use the manual input when workflow_dispatch; otherwise default to 'pre-merge'
+      testplan: ${{ inputs.testplan != '' && inputs.testplan || 'pre-merge' }}

@@ -3,9 +3,15 @@ name: post_merge_build
 
 on:
   workflow_dispatch:
+    inputs:
+      testplan:
+        description: 'Test plan name to use in job generation (lava-test-plans)'
+        required: false
+        type: string
+        default: 'post-merge'
   push:
     branches:
-      - master
+      - post
     paths-ignore:
       - '.github/**'
 
@@ -78,3 +84,4 @@ jobs:
     secrets: inherit
     with:
       build_matrix: ${{ needs.filter_test_matrix.outputs.test_matrix }}
+      testplan: ${{ inputs.testplan != '' && inputs.testplan || 'post-merge' }}
