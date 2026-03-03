@@ -12,7 +12,7 @@ on:
   pull_request_target: # requiring access to base repo
     types: [opened, synchronize, reopened]
     branches:
-      - master
+      - PR
     paths-ignore:
       - '.github/**'
 

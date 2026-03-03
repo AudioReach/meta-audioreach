@@ -11,7 +11,7 @@ on:
         default: 'post-merge'
   push:
     branches:
-      - master
+      - PR
     paths-ignore:
       - '.github/**'
 
