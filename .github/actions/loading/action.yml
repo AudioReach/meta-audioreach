@@ -134,17 +134,19 @@ runs:
       shell: bash
       run: |
         echo "## Build Matrix" >> "$GITHUB_STEP_SUMMARY"
-        echo "| Selector | Machine Name | Image Name | Test Enabled | Build Command |" >> "$GITHUB_STEP_SUMMARY"
-        echo "|----------|--------------|------------|--------------|---------------|" >> "$GITHUB_STEP_SUMMARY"
+        echo "| Selector | Machine Name | KAS File | KAS Basename | IMAGE_NAME| TEST_ENABLED |" >> "$GITHUB_STEP_SUMMARY"
+        echo "|---------|--------------|----------|--------------|--------------|------------|" >> "$GITHUB_STEP_SUMMARY"
 
         build_matrix='${{ steps.set-matrix.outputs.build_matrix }}'
 
         echo "$build_matrix" | jq -c '.[]' | while read -r entry; do
           selector=$(echo "$entry" | jq -r '.selector')
           machine_name=$(echo "$entry" | jq -r '.machine_name')
+          kas_file=$(echo "$entry" | jq -r '.kas_file')
+          kas_basename=$(echo "$entry" | jq -r '.kas_basename')
           image_name=$(echo "$entry" | jq -r '.image_name')
           testing_enabled=$(echo "$entry" | jq -r '.testing_enabled')
           build_command=$(echo "$entry" | jq -r '.build_commands.flat_build')
 
-          echo "| ${selector} | ${machine_name} | ${image_name} | ${testing_enabled} | ${build_command} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| ${selector} | ${machine_name} | ${kas_file} | ${kas_basename} | ${image_name}| ${testing_enabled} |" >> "$GITHUB_STEP_SUMMARY"
         done

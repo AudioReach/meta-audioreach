@@ -93,7 +93,7 @@ runs:
         PUB_DIR=${{ github.workspace }}/pub/${MACHINE}/flat_build
         mkdir -p "$PUB_DIR"
         
-        cd "$BUILD_DIR/tmp/deploy/images/${MACHINE}"
+        cd "$BUILD_DIR/tmp/deploy/images/${IMAGE_NAME}"
         
         # Handle different image types
         if [ "$MACHINE" = "raspberrypi4" ]; then
