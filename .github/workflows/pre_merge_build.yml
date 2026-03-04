@@ -1,9 +1,6 @@
 ---
 name: pre_merge_build
-run-name: >-
-  ${{ github.event_name == 'pull_request_target'
-        && format('Pre Merge Build PR #{0}', github.event.pull_request.number)
-        || 'Pre Merge Build' }}
+run-name: Pre Merge Build ${{ github.event.pull_request.number != '' && github.event.pull_request.number || '' }}
 
 on:
   workflow_dispatch:
