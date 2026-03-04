@@ -1,13 +1,18 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/siemens/kas/master/kas/schema-kas.json
-
 header:
   version: 14
 
-distro: poky-altcfg
+distro: poky
 
 defaults:
   repos:
-    branch: master
+    branch: scarthgap
+
+bitbake:
+  url: https://github.com/openembedded/bitbake.git
+  rev: "2.8"
+  layers:
+    .: excluded
 
 repos:
   oe-core:
@@ -15,47 +20,38 @@ repos:
     layers:
       meta:
 
-  bitbake:
-    url: https://github.com/openembedded/bitbake
-    layers:
-      .: excluded
-
   meta-yocto:
     url: https://git.yoctoproject.org/meta-yocto
     layers:
       meta-poky:
 
-  meta-qcom:
-    url: https://github.com/qualcomm-linux/meta-qcom.git
+  meta-raspberrypi:
+    url: git://git.yoctoproject.org/meta-raspberrypi
 
   meta-openembedded:
-    url: https://github.com/openembedded/meta-openembedded
+    url: https://git.openembedded.org/meta-openembedded
     layers:
-      meta-multimedia:
       meta-oe:
       meta-python:
+      meta-multimedia:
+      meta-networking:
 
   meta-audioreach:
-    path: meta-audioreach
+    url: https://github.com/AudioReach/meta-audioreach.git
+    layers:
+      .:
 
 local_conf_header:
-  base: |
-    CONF_VERSION = "2"
-    INHERIT += "buildstats-summary"
-    INHERIT += "buildhistory"
-    INHERIT += "rm_work"
-    IMAGE_INSTALL:append = " packagegroup-audioreach"
-  cmdline: |
-    KERNEL_CMDLINE_EXTRA:append = " qcom_scm.download_mode=1"
-  qcomflash: |
-    IMAGE_CLASSES += "image_types_qcom"
-    IMAGE_FSTYPES += "qcomflash"
+  are_support: |
+    PACKAGECONFIG:pn-audioreach-graphmgr = "are_on_apps use_default_acdb_path"
+    PACKAGECONFIG:pn-audioreach-graphservices = "are_on_apps"
+    IMAGE_INSTALL:append = "audioreach-graphservices tinyalsa audioreach-graphmgr audioreach-engine audioreach-conf"
   extra: |
-    DISTRO_FEATURES:append = " efi pni-names"
     EXTRA_IMAGE_FEATURES = "allow-empty-password empty-root-password allow-root-login"
-    IMAGE_ROOTFS_EXTRA_SPACE = "307200"
+  license-accept: |
+    LICENSE_FLAGS_ACCEPTED += "synaptics-killswitch"
 
-machine: unset
+machine: raspberrypi4
+target: core-image-sato
 
-target:
-  - core-image-base
+build_system: oe
