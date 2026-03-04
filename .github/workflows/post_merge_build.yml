@@ -11,7 +11,7 @@ on:
         default: 'post-merge'
   push:
     branches:
-      - master
+      - rpi
     paths-ignore:
       - '.github/**'
 
