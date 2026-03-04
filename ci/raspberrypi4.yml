@@ -38,10 +38,13 @@ repos:
       meta-networking:
 
   # AudioReach — only use ".:" when repo root has conf/layer.conf (this one does)
+  
   meta-audioreach:
-    url: https://github.com/AudioReach/meta-audioreach.git
+    url: https://github.com/AudioReach/meta-audioreach
+    branch: scarthgap
     layers:
       .:
+
 
 local_conf_header:
 
@@ -50,7 +53,7 @@ local_conf_header:
     PACKAGECONFIG:pn-audioreach-graphservices = "are_on_apps"
 
   image_install: |
-    IMAGE_INSTALL:append = " audioreach-graphservices tinyalsa audioreach-graphmgr audioreach-engine audioreach-conf"
+    IMAGE_INSTALL:append = "audioreach-graphservices tinyalsa audioreach-graphmgr audioreach-engine audioreach-conf"
 
   extra: |
     EXTRA_IMAGE_FEATURES = "allow-empty-password empty-root-password allow-root-login"
