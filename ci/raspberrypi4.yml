@@ -17,18 +17,18 @@ repos:
 
   bitbake:
     url: https://github.com/openembedded/bitbake
-    branch: "2.8"      # pin BitBake to 2.8; no layers here
+    branch: "2.8"   # pin BitBake to 2.8; DO NOT add layers here
 
   meta-yocto:
     url: https://git.yoctoproject.org/meta-yocto
     layers:
       meta-poky:
 
-  # Raspberry Pi BSP
   meta-raspberrypi:
     url: git://git.yoctoproject.org/meta-raspberrypi
+    layers:
+      meta-raspberrypi:
 
-  # meta-openembedded
   meta-openembedded:
     url: https://git.openembedded.org/meta-openembedded
     layers:
@@ -37,14 +37,11 @@ repos:
       meta-multimedia:
       meta-networking:
 
-  # AudioReach — only use ".:" when repo root has conf/layer.conf (this one does)
-  
   meta-audioreach:
     url: https://github.com/AudioReach/meta-audioreach
     branch: scarthgap
     layers:
       .:
-
 
 local_conf_header:
 
@@ -53,7 +50,8 @@ local_conf_header:
     PACKAGECONFIG:pn-audioreach-graphservices = "are_on_apps"
 
   image_install: |
-    IMAGE_INSTALL:append = "audioreach-graphservices tinyalsa audioreach-graphmgr audioreach-engine audioreach-conf"
+    # Leading space prevents accidental concatenation
+    IMAGE_INSTALL:append = " audioreach-graphservices tinyalsa audioreach-graphmgr audioreach-engine audioreach-conf"
 
   extra: |
     EXTRA_IMAGE_FEATURES = "allow-empty-password empty-root-password allow-root-login"
