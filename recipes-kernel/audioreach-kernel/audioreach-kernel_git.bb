@@ -10,7 +10,7 @@ SRC_URI = "git://github.com/AudioReach/audioreach-kernel.git;protocol=https;bran
            file://asoc-blacklist.conf \
            file://v1-0001-audioreach-driver-audioreach-common-Fix-WSA-Mute-.patch \
     "
-SRCREV = "2d26f557e1ccc3e5e9bea0b843671805b3fe8d5e"
+SRCREV = "bcf17af355896c61bd176e7eecfac12ee774f4c0"
 
 PV = "0.0+git"
 
