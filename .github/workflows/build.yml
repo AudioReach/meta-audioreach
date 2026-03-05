@@ -7,13 +7,6 @@ on:
         required: true
         type: string
         description: Build matrix for the build job
-
-      build_command:
-        required: false
-        type: string
-        default: "bitbake qcom-multimedia-image"
-        description: Command to run for the build
-
       build_type:
         required: false
         type: string
@@ -43,18 +36,18 @@ jobs:
           pr_repo: ${{ github.event.pull_request.head.repo.full_name }}
           base_ref: ${{ github.ref_name }}
 
-      # REQUIRED CHANGE ???
+      # Use build command from matrix
       - name: Build for ${{ matrix.build_matrix.machine_name }}
         uses: Audioreach/meta-audioreach/.github/actions/build@master
         with:
           docker_image: ${{ steps.get-docker-image.outputs.image_name }}
           kas_file: ${{ matrix.build_matrix.kas_file }}
-          machine_name: ${{ matrix.build_matrix.machine_name }}   # ? NEW REQUIRED FIELD
-          build_command: ${{ inputs.build_command }}
+          machine_name: ${{ matrix.build_matrix.machine_name }}
+          build_command: ${{ matrix.build_matrix.build_commands[inputs.build_type] }}  # Get command from matrix based on build type
           build_type: ${{ inputs.build_type }}
           image_name: ${{ matrix.build_matrix.image_name }}
         env:
-          MACHINE: ${{ matrix.build_matrix.machine_name }}        # ? UPDATED
+          MACHINE: ${{ matrix.build_matrix.machine_name }}
 
       - name: Cleanup Workspace
         if: always()
