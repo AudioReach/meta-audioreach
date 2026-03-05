@@ -1,6 +1,5 @@
 ---
 name: post_merge_build
-
 on:
   workflow_dispatch:
     inputs:
@@ -15,7 +14,6 @@ on:
     paths-ignore:
       - '.github/**'
 
-
 jobs:
   load_parameters:
     uses: ./.github/workflows/loading.yml
@@ -26,8 +24,7 @@ jobs:
     secrets: inherit
     with:
       build_matrix: ${{ needs.load_parameters.outputs.build_matrix }}
-      build_command: ${{ needs.load_parameters.outputs.flat_build }}
-      build_type: flat_build
+      build_type: flat_build    # Remove build_command, use from matrix
 
   sdk_build:
     needs: [load_parameters, flat_build]
@@ -35,8 +32,7 @@ jobs:
     secrets: inherit
     with:
       build_matrix: ${{ needs.load_parameters.outputs.build_matrix }}
-      build_command: ${{ needs.load_parameters.outputs.sdk_build_command }}
-      build_type: sdk_build
+      build_type: sdk_build    # Remove build_command, use from matrix
 
   filter_test_matrix:
     needs: load_parameters
@@ -47,38 +43,33 @@ jobs:
       - id: filter
         shell: bash
         run: |
-            MATRIX='${{ needs.load_parameters.outputs.build_matrix }}'
+          MATRIX='${{ needs.load_parameters.outputs.build_matrix }}'
+          echo "RAW build_matrix:"
+          echo "$MATRIX"
+          echo "Validating JSON..."
+          echo "$MATRIX" | jq . >/dev/null
 
-            echo "RAW build_matrix:"
-            echo "$MATRIX"
+          # Validate and filter matrix
+          FILTERED=$(
+            echo "$MATRIX" | jq -c '
+            if type == "object" then
+              to_entries
+              | map(select(.value.testing_enabled == true))
+              | from_entries
+            elif type == "array" then
+              map(select(.testing_enabled == true))  # Preserve all fields including build_commands
+            else
+              error("Unsupported build_matrix JSON type: " + (type|tostring))
+            end
+            '
+          )
 
-            echo "Validating JSON..."
-            echo "$MATRIX" | jq . >/dev/null
-
-            # Supports:
-            # 1) object keyed by name: { "name": {testing_enabled:true}, ... }
-            # 2) array of entries: [ {Testing_enabled:true,...}, ... ]  (will convert to include list)
-            FILTERED=$(
-              echo "$MATRIX" | jq -c '
-                if type == "object" then
-                  to_entries
-                  | map(select(.value.testing_enabled == true))
-                  | from_entries
-                elif type == "array" then
-                  map(select(.testing_enabled == true))  # <-- Just return the array
-                else
-                  error("Unsupported build_matrix JSON type: " + (type|tostring))
-                end
-              '
-            )
-
-            echo "Filtered matrix (pretty):"
-            echo "$FILTERED" | jq .
-
-            echo "test_matrix=$FILTERED" >> "$GITHUB_OUTPUT"
+          echo "Filtered matrix (pretty):"
+          echo "$FILTERED" | jq .
+          echo "test_matrix=$FILTERED" >> "$GITHUB_OUTPUT"
 
   tests:
-    needs: [load_parameters, flat_build,filter_test_matrix]
+    needs: [load_parameters, flat_build, filter_test_matrix]
     if: ${{ always() && needs.flat_build.result != 'skipped' }}
     uses: ./.github/workflows/test.yml
     secrets: inherit

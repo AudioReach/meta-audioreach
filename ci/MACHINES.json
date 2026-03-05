@@ -2,25 +2,51 @@
   "8275-evk": {
     "file_name": "meta-audioreach/ci/iq-8275-evk.yml",
     "machine_name": "8275-evk",
-    "image_name":"iq-8275-evk",
-    "testing_enabled": false
+    "image_name": "iq-8275-evk",
+    "testing_enabled": false,
+    "build_commands": {
+      "flat_build": "bitbake qcom-multimedia-image",
+      "sdk_build": "bitbake qcom-multimedia-image && bitbake qcom-multimedia-image -c populate_sdk"
+    }
   },
   "9075-evk": {
     "file_name": "meta-audioreach/ci/iq-9075-evk.yml",
     "machine_name": "9075-evk",
-    "image_name":"iq-9075-evk",
-    "testing_enabled": false
+    "image_name": "iq-9075-evk",
+    "testing_enabled": false,
+    "build_commands": {
+      "flat_build": "bitbake qcom-multimedia-image",
+      "sdk_build": "bitbake qcom-multimedia-image && bitbake qcom-multimedia-image -c populate_sdk"
+    }
   },
   "rb3gen2-core-kit": {
     "file_name": "meta-audioreach/ci/rb3gen2-core-kit.yml",
     "machine_name": "rb3gen2-core-kit",
-    "image_name":"rb3gen2-core-kit",
-    "testing_enabled": true
+    "image_name": "rb3gen2-core-kit",
+    "testing_enabled": true,
+	"build_commands": {
+      "flat_build": "bitbake qcom-multimedia-image",
+      "sdk_build": "bitbake qcom-multimedia-image && bitbake qcom-multimedia-image -c populate_sdk"
+    }
   },
   "rb3gen2-core-kit-6.18": {
     "file_name": "meta-audioreach/ci/rb3gen2-core-kit-6.18.yml",
     "machine_name": "rb3gen2-core-kit",
-    "image_name":"rb3gen2-core-kit",
-    "testing_enabled": true
+    "image_name": "rb3gen2-core-kit",
+    "testing_enabled": true,
+	"build_commands": {
+      "flat_build": "bitbake qcom-multimedia-image",
+      "sdk_build": "bitbake qcom-multimedia-image && bitbake qcom-multimedia-image -c populate_sdk"
+    }
+  },
+  "raspberrypi4": {
+    "file_name": "meta-audioreach/ci/raspberrypi4.yml",
+    "machine_name": "raspberrypi4",
+    "image_name": "raspberrypi4",
+    "testing_enabled": false,
+    "build_commands": {
+      "flat_build": "bitbake core-image-sato",
+      "sdk_build": "bitbake core-image-sato && bitbake core-image-sato -c populate_sdk"
+    }
   }
 }

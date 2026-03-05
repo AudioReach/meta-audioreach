@@ -1,54 +1,44 @@
 ---
 name: Build
 description: Build the project using a Docker container
-
 inputs:
   docker_image:
     description: Docker image to use for the build job
     required: true
-
   kas_file:
     description: KAS file to use for the build job
     required: true
-
   machine_name:
     description: Yocto MACHINE name to use for artifact paths
     required: true
-    
   image_name:
     description: Yocto image name to use for artifact paths
     required: true
-
   build_command:
     description: Command to run for the build
     required: false
     default: "bitbake qcom-multimedia-image"
-
   build_type:
     description: Type of build to perform (flat_build or sdk_build)
     required: false
     default: "flat_build"
+  build_matrix:
+    description: Build matrix containing configuration
+    required: true
 
 runs:
   using: "composite"
   steps:
-
     - name: Initialize env (MACHINE, file list)
       shell: bash
       run: |
         #!/bin/bash
         set -e
         echo "MACHINE=${{ inputs.machine_name }}" >> $GITHUB_ENV
-
-        # REQUIRED CHANGE (1): derive unique artifact_key from kas_file
         KAS_BASE="$(basename "${{ inputs.kas_file }}")"
         ARTIFACT_KEY="${KAS_BASE%.*}"
         echo "ARTIFACT_KEY=${ARTIFACT_KEY}" >> $GITHUB_ENV
-
-        # >>> REQUIRED: add ARTIFACT_KEY_BASENAME for Process URLs action
         echo "ARTIFACT_KEY_BASENAME=${ARTIFACT_KEY}" >> $GITHUB_ENV
-
-        # REQUIRED CHANGE (2): make filepath unique per variant
         filepath="${{ github.workspace }}/${{ inputs.machine_name }}_${{ inputs.build_type }}_${ARTIFACT_KEY}_file_list.txt"
         echo "filepath=${filepath}" >> $GITHUB_ENV
         : > "$filepath"
@@ -58,17 +48,14 @@ runs:
       run: |
         #!/bin/bash
         set -e
-
         filepath="${{ github.workspace }}/${{ env.MACHINE }}_${{ inputs.build_type }}_${{ env.ARTIFACT_KEY }}_file_list.txt"
         echo "filepath=${filepath}" >> $GITHUB_ENV
         touch $filepath
-
         USER_ID=$(id -u)
         GROUP_ID=$(id -g)
         USER=$(whoami)
         WORKSPACE=${{ github.workspace }}/..
         USER_HOME="/home/$USER"
-        
         echo "::group::$(printf '__________ %-100s' 'build' | tr ' ' _)"
         docker run \
           --rm \
@@ -95,23 +82,35 @@ runs:
       run: |
         #!/bin/bash
         set -ex
-
         KAS_FILE="${{ inputs.kas_file }}"
         KAS_FILE="${KAS_FILE##*/}"
         KAS_FILE="${KAS_FILE%.*}"
         IMAGE_NAME="${{ inputs.image_name }}"
-        
+        MACHINE=${{ env.MACHINE }}
         
         cd ..
-        MACHINE=${{ env.MACHINE }}
         BUILD_DIR=build
         PUB_DIR=${{ github.workspace }}/pub/${MACHINE}/flat_build
         mkdir -p "$PUB_DIR"
-
+        
         cd "$BUILD_DIR/tmp/deploy/images/${IMAGE_NAME}"
-        cp "qcom-multimedia-image-${IMAGE_NAME}.rootfs.qcomflash.tar.gz" "$PUB_DIR/qcom-multimedia-image-${KAS_FILE}.rootfs.qcomflash.tar.gz"
+        
+        # Handle different image types
+        if [ "$MACHINE" = "raspberrypi4" ]; then
+          # For Raspberry Pi
+          if [ -f "${IMAGE_NAME}-${MACHINE}.tar.bz2" ]; then
+            cp "${IMAGE_NAME}-${MACHINE}.tar.bz2" "$PUB_DIR/${IMAGE_NAME}-${KAS_FILE}.tar.bz2"
+            echo "${PUB_DIR}/${IMAGE_NAME}-${KAS_FILE}.tar.bz2" >> ${{ env.filepath }}
+          
+          fi
+        else
+          # For QCOM devices
+          
+          cp "qcom-multimedia-image-${IMAGE_NAME}.rootfs.qcomflash.tar.gz" "$PUB_DIR/qcom-multimedia-image-${KAS_FILE}.rootfs.qcomflash.tar.gz"
+          echo "${PUB_DIR}/qcom-multimedia-image-${KAS_FILE}.rootfs.qcomflash.tar.gz" >> ${{ env.filepath }}
 
-        echo "${PUB_DIR}/qcom-multimedia-image-${KAS_FILE}.rootfs.qcomflash.tar.gz" >> ${{ env.filepath }}
+        fi
+        
         ls -larth "$PUB_DIR"
         echo "Build artifacts created in $PUB_DIR"
 
@@ -124,10 +123,28 @@ runs:
         KAS_FILE="${{ inputs.kas_file }}"
         KAS_FILE="${KAS_FILE##*/}"
         KAS_FILE="${KAS_FILE%.*}"
-
+        MACHINE="${{ env.MACHINE }}"
+        
         cd ..
         cd build/tmp/deploy/sdk/
-        sdk_file=$(ls qcom-distro-*.sh)
+        
+        # Handle different SDK patterns
+        if [ "$MACHINE" = "raspberrypi4" ]; then
+          # For Raspberry Pi
+          sdk_file=$(ls poky-*.sh || ls core-image-*.sh)
+        else
+          # For QCOM devices
+          sdk_file=$(ls qcom-distro-*.sh)
+        fi
+        
+        # Check if SDK file was found
+        if [ -z "$sdk_file" ]; then
+          echo "Error: No SDK file found for $MACHINE"
+          echo "Contents of sdk directory:"
+          ls -la
+          exit 1
+        fi
+        
         PUB_DIR=${{ github.workspace }}/pub/${{ env.MACHINE }}/sdk_build
         mkdir -p $PUB_DIR
         cp $sdk_file $PUB_DIR/sdk-${KAS_FILE}.sh
@@ -145,7 +162,7 @@ runs:
         MACHINE: ${{ env.MACHINE }}
         BUILD_TYPE: ${{ inputs.build_type }}
         ARTIFACT_KEY: ${{ env.ARTIFACT_KEY }}
-        ARTIFACT_KEY_BASENAME: ${{ env.ARTIFACT_KEY_BASENAME }}   # <<< REQUIRED
+        ARTIFACT_KEY_BASENAME: ${{ env.ARTIFACT_KEY_BASENAME }}
 
     - name: Update Summary
       shell: bash
@@ -153,6 +170,7 @@ runs:
         echo "## Build Summary for ${{ env.MACHINE }}" >> $GITHUB_STEP_SUMMARY
         echo '### :rocket: Build Successful!' >> $GITHUB_STEP_SUMMARY
         echo "- Machine: ${{ env.MACHINE }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Image: ${{ inputs.image_name }}" >> $GITHUB_STEP_SUMMARY
         echo "- Config File: ${{ inputs.kas_file }}" >> $GITHUB_STEP_SUMMARY
         echo "- Build Type: ${{ inputs.build_type }}" >> $GITHUB_STEP_SUMMARY
         echo "- Build Command: ${{ inputs.build_command }}" >> $GITHUB_STEP_SUMMARY
