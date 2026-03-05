@@ -44,7 +44,7 @@
   "raspberrypi4": {
     "file_name": "meta-audioreach/ci/raspberrypi4.yml",
     "machine_name": "raspberrypi4",
-    "image_name": "core-image-sato",
+    "image_name": "raspberrypi4",
     "artifact_flavor": "yocto",
     "testing_enabled": false,
     "build_commands": {
