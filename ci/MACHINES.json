@@ -48,5 +48,25 @@
       "flat_build": "bitbake core-image-sato",
       "sdk_build": "bitbake core-image-sato && bitbake core-image-sato -c populate_sdk"
     }
+  },
+  "kaanapali-mtp": {
+    "file_name": "meta-audioreach/ci/kaanapali-mtp.yml",
+    "machine_name": "kaanapali-mtp",
+    "image_name": "kaanapali-mtp",
+    "testing_enabled": false,
+    "build_commands": {
+      "flat_build": "bitbake qcom-multimedia-image",
+      "sdk_build": "bitbake qcom-multimedia-image && bitbake qcom-multimedia-image -c populate_sdk"
+    }
+  },
+  "sm8750-mtp": {
+    "file_name": "meta-audioreach/ci/sm8750-mtp.yml",
+    "machine_name": "sm8750-mtp",
+    "image_name": "sm8750-mtp",
+    "testing_enabled": false,
+    "build_commands": {
+      "flat_build": "bitbake qcom-multimedia-image",
+      "sdk_build": "bitbake qcom-multimedia-image && bitbake qcom-multimedia-image -c populate_sdk"
+    }
   }
 }
