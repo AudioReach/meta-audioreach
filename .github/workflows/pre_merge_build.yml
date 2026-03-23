@@ -66,6 +66,9 @@ jobs:
   tests:
     needs: [load_parameters, flat_build, filter_test_matrix]
     if: ${{ (success() || failure()) && !contains(needs.flat_build.result, 'skipped') }}
+    permissions:
+      checks: write
+      pull-requests: write
     uses: ./.github/workflows/test.yml
     secrets: inherit
     with:
