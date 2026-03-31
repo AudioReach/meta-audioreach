@@ -4,7 +4,7 @@ DESCRIPTION = "Pipewire plugin for AudioReach to enable PAL card integration and
 LICENSE = "BSD-3-Clause"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=91f36d19ef812a054b22d918288de2b5"
 
-SRCREV = "49f79deb5985cd53102bf6568950e4c7cc656a3b"
+SRCREV = "c8de0e00c76efcb023e8d4e1e2d1d25881cf4701"
 PV = "0.0+git"
 SRC_URI = "git://github.com/AudioReach/audioreach-pipewire-plugin.git;protocol=https;branch=master"
 
