@@ -27,7 +27,7 @@ repos:
 
 
   meta-qcom:
-    url: https://github.com/vkraleti/meta-qcom.git
+    url: https://github.com/ffrancis123/meta-qcom.git
     branch: sdk
     
   meta-openembedded:
