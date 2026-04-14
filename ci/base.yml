@@ -25,9 +25,11 @@ repos:
     layers:
       meta-poky:
 
-  meta-qcom:
-    url: https://github.com/qualcomm-linux/meta-qcom.git
 
+  meta-qcom:
+    url: https://github.com/vkraleti/meta-qcom.git
+    branch: sdk
+    
   meta-openembedded:
     url: https://github.com/openembedded/meta-openembedded
     layers:
