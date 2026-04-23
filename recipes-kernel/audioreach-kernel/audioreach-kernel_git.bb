@@ -20,6 +20,8 @@ MAKE_TARGETS = "modules"
 
 MODULES_MODULE_SYMVERS_LOCATION = "audioreach-driver"
 
+EXTRA_OEMAKE:append:qcom += "VENDOR_QCOM=1"
+
 do_install:append() {
     install -d ${D}${sysconfdir}/udev/rules.d
     install -m 0644 ${UNPACKDIR}/audioreach.rules ${D}${sysconfdir}/udev/rules.d/
