@@ -26,7 +26,7 @@ repos:
     branch: master
     patches:
       plain:
-        repo: meta-qcom
+        repo: meta-audioreach
         path: patches/0001-compilation-fix.patch
 
   meta-selinux:
