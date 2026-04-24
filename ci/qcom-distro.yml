@@ -25,8 +25,8 @@ repos:
     url: https://git.yoctoproject.org/git/meta-virtualization
     branch: master
     patches:
-	plain:
-	repo: meta-audioreach
+      plain:
+        repo: meta-audioreach
         patch: patches/0001-compilation-fix.patch
 
   meta-selinux:
