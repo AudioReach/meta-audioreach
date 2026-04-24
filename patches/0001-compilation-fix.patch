@@ -1,0 +1,26 @@
+From 0abc7239f82273952364bf26721f22429b2e5981 Mon Sep 17 00:00:00 2001
+From: kas User <kas@example.com>
+Date: Fri, 24 Apr 2026 12:46:43 +0530
+Subject: [PATCH] compilation fix
+
+Signed-off-by: kas User <kas@example.com>
+---
+ conf/layer.conf | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/conf/layer.conf b/conf/layer.conf
+index eababe00..51568d22 100644
+--- a/conf/layer.conf
++++ b/conf/layer.conf
+@@ -72,7 +72,7 @@ HOSTTOOLS_NONFATAL += "getent"
+ 
+ # Propagate virtualization/vcontainer to native DISTRO_FEATURES for qemu virtfs support
+ # This enables virtio-9p in qemu-system-native for container-cross-install batch imports
+-DISTRO_FEATURES_NATIVE:append = " ${@bb.utils.contains_any('DISTRO_FEATURES', 'vcontainer virtualization', 'virtualization', '', d)}"
++#DISTRO_FEATURES_NATIVE:append = " ${@bb.utils.contains_any('DISTRO_FEATURES', 'vcontainer virtualization', 'virtualization', '', d)}"
+ 
+ NON_MULTILIB_RECIPES:append:x86-64 = " kubernetes"
+ 
+-- 
+2.34.1
+
