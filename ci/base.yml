@@ -54,7 +54,6 @@ local_conf_header:
     https://.*/.*/ https://artifacts.codelinaro.org/codelinaro-le/ \
     "
     PREMIRRORS:prepend = "\https://crates.io/api/v1/crates/  https://static.crates.io/crates/ \n \"
-  local_conf_header:
   mirror: |
     SOURCE_MIRROR_URL = "file:///prj/qct/quic/oe_filer_scratch/DOWNLOADS/whinlatter"
     INHERIT += "own-mirrors"
