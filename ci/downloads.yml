@@ -1,0 +1,9 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/siemens/kas/master/kas/schema-kas.json
+
+header:
+  version: 14
+
+local_conf_header:
+  mirror: |
+    SOURCE_MIRROR_URL = "file:///prj/qct/quic/oe_filer_scratch/DOWNLOADS/whinlatter"
+    INHERIT += "own-mirrors"
