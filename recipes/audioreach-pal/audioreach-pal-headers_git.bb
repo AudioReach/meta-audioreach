@@ -6,8 +6,8 @@ LICENSE = "BSD-3-Clause-Clear"
 LIC_FILES_CHKSUM = "file://${UNPACKDIR}/${PN}-${PV}/LICENSE;md5=51110a366f598bc0b8f8e59141a18efb"
 
 SRCPROJECT = "git://github.com/AudioReach/audioreach-pal.git"
-SRCBRANCH  = "qclinux1.0"
-SRCREV     = "db8e49786864da61fd55d5df1326094c63191df8"
+SRCBRANCH  = "master"
+SRCREV     = "4a13cc426171047b00de1ad8f76d058cba89c95a"
 PV = "0.0+git"
 
 SRC_URI = "${SRCPROJECT};protocol=https;branch=${SRCBRANCH};"
