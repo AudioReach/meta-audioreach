@@ -38,7 +38,7 @@ inputs:
     required: false
     default: "24"
   parallel_make:
-    description: PARALLEL_MAKE value used during builds (example: -j24)
+    description: "PARALLEL_MAKE value used during builds (example: -j24)"
     required: false
     default: "-j24"
 
