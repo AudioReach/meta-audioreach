@@ -25,6 +25,22 @@ inputs:
   build_matrix:
     description: Build matrix containing configuration
     required: true
+  docker_cpus:
+    description: CPU quota for docker build container
+    required: false
+    default: "48"
+  docker_memory:
+    description: Memory limit for docker build container
+    required: false
+    default: "96g"
+  bitbake_threads:
+    description: BB_NUMBER_THREADS value used during builds
+    required: false
+    default: "24"
+  parallel_make:
+    description: "PARALLEL_MAKE value used during builds (example: -j24)"
+    required: false
+    default: "-j24"
 
 runs:
   using: "composite"
@@ -63,14 +79,17 @@ runs:
           -v ${WORKSPACE}:${USER_HOME}/workspace \
           -w ${USER_HOME}/workspace \
           --privileged \
-          --cpus=48 \
-          --memory=96g \
+          --cpus=${{ inputs.docker_cpus }} \
+          --memory=${{ inputs.docker_memory }} \
           --ulimit nofile=1048576:1048576 \
           ${{ inputs.docker_image }} \
           bash -c "
             set -e
             kas shell ${{ inputs.kas_file }} -c '
               umask 022
+              export BB_NUMBER_THREADS=\"${{ inputs.bitbake_threads }}\"
+              export PARALLEL_MAKE=\"${{ inputs.parallel_make }}\"
+              export CARGO_BUILD_JOBS=\"${{ inputs.bitbake_threads }}\"
               ${{ inputs.build_command }}
             '
           "
