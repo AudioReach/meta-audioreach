@@ -18,6 +18,8 @@ jobs:
     runs-on:
       group: GHA-Audioreach-SelfHosted-RG
       labels: [ self-hosted, audior-prd-u22-sdk-x64-large-od-ephem ]
+    env:
+      YOCTO_CACHE_ROOT: ${{ vars.YOCTO_CACHE_DIR || format('{0}/../.yocto-cache/meta-audioreach', github.workspace) }}
     strategy:
       fail-fast: false
       matrix:
@@ -46,6 +48,7 @@ jobs:
           build_command: ${{ matrix.build_matrix.build_commands[inputs.build_type] }}  # Get command from matrix based on build type
           build_type: ${{ inputs.build_type }}
           image_name: ${{ matrix.build_matrix.image_name }}
+          cache_root: ${{ env.YOCTO_CACHE_ROOT }}
         env:
           MACHINE: ${{ matrix.build_matrix.machine_name }}
 
