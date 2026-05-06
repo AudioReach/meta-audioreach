@@ -41,6 +41,10 @@ inputs:
     description: "PARALLEL_MAKE value used during builds (example: -j24)"
     required: false
     default: "-j24"
+  cache_root:
+    description: Host directory used to persist Yocto download and sstate caches
+    required: false
+    default: /mnt/yocto-cache/meta-audioreach
 
 runs:
   using: "composite"
@@ -63,20 +67,31 @@ runs:
       shell: bash
       run: |
         #!/bin/bash
-        set -e
+        set -euo pipefail
         filepath="${{ github.workspace }}/${{ env.MACHINE }}_${{ inputs.build_type }}_${{ env.ARTIFACT_KEY }}_file_list.txt"
         echo "filepath=${filepath}" >> $GITHUB_ENV
-        touch $filepath
-        USER_ID=$(id -u)
-        GROUP_ID=$(id -g)
+        touch "$filepath"
         USER=$(whoami)
         WORKSPACE=${{ github.workspace }}/..
         USER_HOME="/home/$USER"
+        CACHE_ROOT_INPUT="${{ inputs.cache_root }}"
+        CACHE_ROOT="${CACHE_ROOT_INPUT}"
+        if ! mkdir -p "${CACHE_ROOT}" 2>/dev/null; then
+          CACHE_ROOT="${WORKSPACE}/.yocto-cache/meta-audioreach"
+          mkdir -p "${CACHE_ROOT}"
+        fi
+        DOWNLOADS_DIR="${CACHE_ROOT}/downloads"
+        SSTATE_DIR="${CACHE_ROOT}/sstate-cache-$(date +%Y-%m)"
+        mkdir -p "${DOWNLOADS_DIR}" "${SSTATE_DIR}"
+        echo "CACHE_ROOT=${CACHE_ROOT}" >> "$GITHUB_ENV"
+        echo "DOWNLOADS_DIR=${DOWNLOADS_DIR}" >> "$GITHUB_ENV"
+        echo "SSTATE_DIR=${SSTATE_DIR}" >> "$GITHUB_ENV"
         echo "::group::$(printf '__________ %-100s' 'build' | tr ' ' _)"
         docker run \
           --rm \
           --user $(id -u):$(id -g) \
-          -v ${WORKSPACE}:${USER_HOME}/workspace \
+          -v "${WORKSPACE}:${USER_HOME}/workspace" \
+          -v "${CACHE_ROOT}:/yocto-cache" \
           -w ${USER_HOME}/workspace \
           --privileged \
           --cpus=${{ inputs.docker_cpus }} \
@@ -84,7 +99,10 @@ runs:
           --ulimit nofile=1048576:1048576 \
           ${{ inputs.docker_image }} \
           bash -c "
-            set -e
+            set -euo pipefail
+            export DL_DIR=/yocto-cache/downloads
+            export SSTATE_DIR=/yocto-cache/sstate-cache-$(date +%Y-%m)
+            export BB_ENV_PASSTHROUGH_ADDITIONS=\"\${BB_ENV_PASSTHROUGH_ADDITIONS:+\${BB_ENV_PASSTHROUGH_ADDITIONS} }DL_DIR SSTATE_DIR\"
             kas shell ${{ inputs.kas_file }} -c '
               umask 022
               export BB_NUMBER_THREADS=\"${{ inputs.bitbake_threads }}\"
@@ -193,3 +211,5 @@ runs:
         echo "- Config File: ${{ inputs.kas_file }}" >> $GITHUB_STEP_SUMMARY
         echo "- Build Type: ${{ inputs.build_type }}" >> $GITHUB_STEP_SUMMARY
         echo "- Build Command: ${{ inputs.build_command }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Yocto downloads cache: ${{ env.DOWNLOADS_DIR }}" >> $GITHUB_STEP_SUMMARY
+        echo "- Yocto sstate cache: ${{ env.SSTATE_DIR }}" >> $GITHUB_STEP_SUMMARY
