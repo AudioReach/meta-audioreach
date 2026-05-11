@@ -12,8 +12,13 @@ S = "${WORKDIR}/git"
 
 DEPENDS = "glib-2.0 tinyalsa audioreach-graphservices dbus audioreach-conf"
 EXTRA_OECONF += "--with-glib --with-syslog"
-SOLIBS = ".so"
+# tinyalsa uses dlopen() to load the unversioned AGM .so at runtime
+# (see tinyalsa/src/snd_card_plugin.c), so the unversioned .so must be
+# included in the runtime package.
+SOLIBS = ".so*"
+
 FILES_SOLIBSDEV = ""
+INSANE_SKIP:${PN} += "dev-so"
 
 do_install:append () {
     install -m 0644 ${WORKDIR}/agm_server.service -D ${D}${sysconfdir}/systemd/system/agm_server.service
