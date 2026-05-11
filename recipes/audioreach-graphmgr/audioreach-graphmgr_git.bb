@@ -11,6 +11,7 @@ SRC_URI     += "file://agm-dbus.conf"
 S = "${WORKDIR}/git"
 
 DEPENDS = "glib-2.0 tinyalsa audioreach-graphservices dbus audioreach-conf"
+DEPENDS:append = "${@bb.utils.contains_any('EXTRA_OECONF', '--enable-alsalib --enable-alsalib=yes', ' alsa-lib', '', d)}"
 EXTRA_OECONF += "--with-glib --with-syslog"
 # tinyalsa uses dlopen() to load the unversioned AGM .so at runtime
 # (see tinyalsa/src/snd_card_plugin.c), so the unversioned .so must be
