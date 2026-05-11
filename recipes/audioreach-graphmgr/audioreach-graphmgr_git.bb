@@ -24,6 +24,8 @@ SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""
 INSANE_SKIP:${PN} += "dev-so"
 
+FILES:${PN} += "${libdir}/alsa-lib/*"
+
 do_install:append () {
     if ${@bb.utils.contains('EXTRA_OECONF', '--with-no-ipc', 'false', 'true', d)}; then
     install -m 0644 ${UNPACKDIR}/agm_server.service -D ${D}${sysconfdir}/systemd/system/agm_server.service
