@@ -16,3 +16,4 @@ inherit autotools pkgconfig
 do_compile[noexec] = "1"
 
 ALLOW_EMPTY:${PN} = "1"
+FILES:${PN} += "${datadir}/alsa/ucm2/conf.virt.d/*"
