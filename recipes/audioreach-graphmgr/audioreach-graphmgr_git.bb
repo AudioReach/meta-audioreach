@@ -21,6 +21,8 @@ SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""
 INSANE_SKIP:${PN} += "dev-so"
 
+FILES:${PN} += "${libdir}/alsa-lib/*"
+
 do_install:append () {
     install -m 0644 ${WORKDIR}/agm_server.service -D ${D}${sysconfdir}/systemd/system/agm_server.service
     install -d ${D}${sysconfdir}/systemd/system/multi-user.target.wants/
