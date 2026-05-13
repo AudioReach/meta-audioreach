@@ -13,6 +13,7 @@ DEPENDS = "glib-2.0 tinyalsa audioreach-graphservices audioreach-conf"
 
 # Add dbus to DEPENDS only if --with-no-ipc is NOT in EXTRA_OECONF
 DEPENDS:append = "${@bb.utils.contains('EXTRA_OECONF', '--with-no-ipc', '', ' dbus', d)}"
+DEPENDS:append = "${@bb.utils.contains_any('EXTRA_OECONF', '--enable-alsalib --enable-alsalib=yes', ' alsa-lib', '', d)}"
 
 EXTRA_OECONF += "--with-glib --with-syslog"
 EXTRA_OECONF:append:qcom = " --with-no-ipc"
@@ -22,6 +23,8 @@ EXTRA_OECONF:append:qcom = " --with-no-ipc"
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""
 INSANE_SKIP:${PN} += "dev-so"
+
+FILES:${PN} += "${libdir}/alsa-lib/*"
 
 do_install:append () {
     if ${@bb.utils.contains('EXTRA_OECONF', '--with-no-ipc', 'false', 'true', d)}; then
