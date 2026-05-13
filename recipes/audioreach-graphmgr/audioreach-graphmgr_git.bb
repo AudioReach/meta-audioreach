@@ -11,6 +11,7 @@ SRC_URI     += "file://agm-dbus.conf"
 S = "${WORKDIR}/git"
 
 DEPENDS = "glib-2.0 tinyalsa audioreach-graphservices dbus audioreach-conf"
+DEPENDS:append = "${@bb.utils.contains_any('EXTRA_OECONF', '--enable-alsalib --enable-alsalib=yes', ' alsa-lib', '', d)}"
 EXTRA_OECONF += "--with-glib --with-syslog"
 # tinyalsa uses dlopen() to load the unversioned AGM .so at runtime
 # (see tinyalsa/src/snd_card_plugin.c), so the unversioned .so must be
@@ -19,6 +20,8 @@ SOLIBS = ".so*"
 
 FILES_SOLIBSDEV = ""
 INSANE_SKIP:${PN} += "dev-so"
+
+FILES:${PN} += "${libdir}/alsa-lib/*"
 
 do_install:append () {
     install -m 0644 ${WORKDIR}/agm_server.service -D ${D}${sysconfdir}/systemd/system/agm_server.service
