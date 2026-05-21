@@ -125,7 +125,8 @@ runs:
         else
           # For QCOM devices
           
-          cp "qcom-multimedia-image-${IMAGE_NAME}.rootfs.qcomflash.tar.gz" "$PUB_DIR/qcom-multimedia-image-${KAS_FILE}.rootfs.qcomflash.tar.gz"
+          # cp "qcom-multimedia-image-${IMAGE_NAME}.rootfs.qcomflash.tar.gz" "$PUB_DIR/qcom-multimedia-image-${KAS_FILE}.rootfs.qcomflash.tar.gz"
+          cp "qcom-multimedia-proprietary-image-${IMAGE_NAME}.rootfs.qcomflash.tar.gz" "$PUB_DIR/qcom-multimedia-proprietary-image-${KAS_FILE}.rootfs.qcomflash.tar.gz"
           echo "${PUB_DIR}/qcom-multimedia-image-${KAS_FILE}.rootfs.qcomflash.tar.gz" >> ${{ env.filepath }}
 
         fi
