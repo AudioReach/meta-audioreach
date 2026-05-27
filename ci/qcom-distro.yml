@@ -12,7 +12,7 @@ repos:
 
   meta-openembedded:
     url: https://github.com/openembedded/meta-openembedded
-      patches:
+    patches:
       plain:
         repo: meta-qcom
         path: patches/meta-oe/0001-mariadb-fix-building-for-the-ARMv8.3-A-and-later-sys.patch
