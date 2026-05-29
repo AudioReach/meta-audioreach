@@ -1,22 +1,11 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/siemens/kas/master/kas/schema-kas.json
+
 header:
-    version: 14
-overrides:
-    repos:
-        oe-core:
-            commit: 3724b93538d3acbec9f48d4c524b51d166071708
-        bitbake:
-            commit: 2b47c2fc40b753e260b63ec419edfd1f85adff90
-        meta-arm:
-            commit: 1843e9e2eb983cfda6a025e7435c0b855aa94eeb
-        meta-openembedded:
-            commit: 335045d3fb440cbb6de0716ffd7dd043bbd3f6ad
-        meta-virtualization:
-            commit: 022f4356d4a9b389f51472d40a9330aa59f6bb9a
-        meta-selinux:
-            commit: 1ba26da4b9bec3f102bd831efe0db00c7d61f7f2
-        meta-updater:
-            commit: a8af24357121dc8614fd98f234b73d55005b0cc9
-        meta-security:
-            commit: 9265f142f3890df2d00d71d13b19e95a082707ed
-        meta-dpdk:
-            commit: c4e58978ce61c47c2f54206e07f9ad46be2ed257
+  version: 14
+  includes:
+    - repo: meta-qcom
+      file: ci/base.lock.yml
+
+repos:
+  meta-audioreach:
+    branch: master
