@@ -3,7 +3,7 @@
 header:
   version: 14
 
-distro: poky-altcfg
+distro: nodistro
 
 defaults:
   repos:
@@ -19,11 +19,6 @@ repos:
     url: https://github.com/openembedded/bitbake
     layers:
       .: excluded
-
-  meta-yocto:
-    url: https://git.yoctoproject.org/meta-yocto
-    layers:
-      meta-poky:
 
   meta-qcom:
     url: https://github.com/qualcomm-linux/meta-qcom.git
@@ -51,7 +46,7 @@ local_conf_header:
     IMAGE_CLASSES += "image_types_qcom"
     IMAGE_FSTYPES += "qcomflash"
   extra: |
-    DISTRO_FEATURES:append = " efi pni-names"
+    DISTRO_FEATURES:append = " efi pam pni-names"
     EXTRA_IMAGE_FEATURES = "allow-empty-password empty-root-password allow-root-login"
     IMAGE_ROOTFS_EXTRA_SPACE = "307200"
 
