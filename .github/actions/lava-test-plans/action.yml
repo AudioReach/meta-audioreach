@@ -152,7 +152,7 @@ runs:
 
         IMAGE_TYPE="core-image-base"
         if [ "${DISTRO_NAME}" = "qcom-distro" ]; then
-          IMAGE_TYPE="qcom-multimedia-image"
+          IMAGE_TYPE="qcom-multimedia-proprietary-image"
           echo "AUTO_LOGIN_PASSWORD_PROMPT=Password" >> "${VARS_OUT_PATH}/gh-variables.ini"
           echo "AUTO_LOGIN_PASSWORD=oelinux123"     >> "${VARS_OUT_PATH}/gh-variables.ini"
         fi

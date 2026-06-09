@@ -49,4 +49,4 @@ local_conf_header:
     SKIP_META_VIRT_SANITY_CHECK = "1"
 
 target:
-  - qcom-multimedia-image
+  - qcom-multimedia-proprietary-image
