@@ -5,8 +5,8 @@
     "image_name": "iq-8275-evk",
     "testing_enabled": false,
     "build_commands": {
-      "flat_build": "bitbake qcom-multimedia-image",
-      "sdk_build": "bitbake qcom-multimedia-image && bitbake qcom-multimedia-image -c populate_sdk"
+      "flat_build": "bitbake qcom-multimedia-proprietary-image",
+      "sdk_build": "bitbake qcom-multimedia-proprietary-image && bitbake qcom-multimedia-proprietary-image -c populate_sdk"
     }
   },
   "9075-evk": {
@@ -15,8 +15,8 @@
     "image_name": "iq-9075-evk",
     "testing_enabled": false,
     "build_commands": {
-      "flat_build": "bitbake qcom-multimedia-image",
-      "sdk_build": "bitbake qcom-multimedia-image && bitbake qcom-multimedia-image -c populate_sdk"
+      "flat_build": "bitbake qcom-multimedia-proprietary-image",
+      "sdk_build": "bitbake qcom-multimedia-proprietary-image && bitbake qcom-multimedia-proprietary-image -c populate_sdk"
     }
   },
   "rb3gen2-core-kit": {
@@ -25,8 +25,8 @@
     "image_name": "rb3gen2-core-kit",
     "testing_enabled": true,
 	"build_commands": {
-      "flat_build": "bitbake qcom-multimedia-image",
-      "sdk_build": "bitbake qcom-multimedia-image && bitbake qcom-multimedia-image -c populate_sdk"
+      "flat_build": "bitbake qcom-multimedia-proprietary-image",
+      "sdk_build": "bitbake qcom-multimedia-proprietary-image && bitbake qcom-multimedia-proprietary-image -c populate_sdk"
     }
   },
   "rb3gen2-core-kit-6.18": {
@@ -35,8 +35,8 @@
     "image_name": "rb3gen2-core-kit",
     "testing_enabled": true,
 	"build_commands": {
-      "flat_build": "bitbake qcom-multimedia-image",
-      "sdk_build": "bitbake qcom-multimedia-image && bitbake qcom-multimedia-image -c populate_sdk"
+      "flat_build": "bitbake qcom-multimedia-proprietary-image",
+      "sdk_build": "bitbake qcom-multimedia-proprietary-image && bitbake qcom-multimedia-proprietary-image -c populate_sdk"
     }
   },
   "raspberrypi4": {
@@ -55,8 +55,8 @@
     "image_name": "kaanapali-mtp",
     "testing_enabled": false,
     "build_commands": {
-      "flat_build": "bitbake qcom-multimedia-image",
-      "sdk_build": "bitbake qcom-multimedia-image && bitbake qcom-multimedia-image -c populate_sdk"
+      "flat_build": "bitbake qcom-multimedia-proprietary-image",
+      "sdk_build": "bitbake qcom-multimedia-proprietary-image && bitbake qcom-multimedia-proprietary-image -c populate_sdk"
     }
   },
   "sm8750-mtp": {
@@ -65,8 +65,8 @@
     "image_name": "sm8750-mtp",
     "testing_enabled": false,
     "build_commands": {
-      "flat_build": "bitbake qcom-multimedia-image",
-      "sdk_build": "bitbake qcom-multimedia-image && bitbake qcom-multimedia-image -c populate_sdk"
+      "flat_build": "bitbake qcom-multimedia-proprietary-image",
+      "sdk_build": "bitbake qcom-multimedia-proprietary-image && bitbake qcom-multimedia-proprietary-image -c populate_sdk"
     }
   }
 }

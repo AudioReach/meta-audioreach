@@ -87,8 +87,8 @@ runs:
                 image_name: selector,
                 testing_enabled: true,
                 build_commands: {
-                  flat_build: 'bitbake qcom-multimedia-image',
-                  sdk_build: 'bitbake qcom-multimedia-image && bitbake qcom-multimedia-image -c populate_sdk'
+                  flat_build: 'bitbake qcom-multimedia-proprietary-image',
+                  sdk_build: 'bitbake qcom-multimedia-proprietary-image && bitbake qcom-multimedia-proprietary-image -c populate_sdk'
                 }
               });
             } else if (Array.isArray(value)) {
