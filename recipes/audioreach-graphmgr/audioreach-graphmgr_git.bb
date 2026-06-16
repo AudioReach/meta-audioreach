@@ -10,6 +10,7 @@ SRC_URI     += "file://agm_server.service"
 SRC_URI     += "file://agm-dbus.conf"
 
 DEPENDS = "glib-2.0 tinyalsa audioreach-graphservices audioreach-conf"
+DEPENDS:append:qcom = " tinycompress"
 
 # Add dbus to DEPENDS only if --with-no-ipc is NOT in EXTRA_OECONF
 DEPENDS:append = "${@bb.utils.contains('EXTRA_OECONF', '--with-no-ipc', '', ' dbus', d)}"
@@ -24,7 +25,7 @@ SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""
 INSANE_SKIP:${PN} += "dev-so"
 
-FILES:${PN} += "${libdir}/alsa-lib/*"
+FILES:${PN} += "${libdir}/alsa-lib/* ${libdir}/tinycompress-lib/*"
 
 do_install:append () {
     if ${@bb.utils.contains('EXTRA_OECONF', '--with-no-ipc', 'false', 'true', d)}; then
