@@ -2,9 +2,9 @@ name: Yocto Layer Sanity Check
 
 on:
   pull_request:
-    branches: [ master ]
+    branches: [ fix ]
   push:
-    branches: [ master ]
+    branches: [ fix ]
   workflow_dispatch:
 
 jobs:
