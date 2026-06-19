@@ -68,5 +68,15 @@
       "flat_build": "bitbake qcom-multimedia-proprietary-image",
       "sdk_build": "bitbake qcom-multimedia-proprietary-image && bitbake qcom-multimedia-proprietary-image -c populate_sdk"
     }
+  },
+  "glymur-crd": {
+    "file_name": "meta-audioreach/ci/glymur-crd.yml",
+    "machine_name": "glymur-crd",
+    "image_name": "glymur-crd",
+    "testing_enabled": false,
+    "build_commands": {
+      "flat_build": "bitbake qcom-multimedia-proprietary-image",
+      "sdk_build": "bitbake qcom-multimedia-proprietary-image && bitbake qcom-multimedia-proprietary-image -c populate_sdk"
+    }
   }
 }
