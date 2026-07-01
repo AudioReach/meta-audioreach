@@ -1,6 +1,11 @@
 name: Build Docker Image
 description: Build Docker Image Action
 
+inputs:
+  cache_scope:
+    description: Unique cache scope for Buildx gha cache
+    required: true
+
 outputs:
   image_name:
     description: Name of the built Docker image
@@ -43,8 +48,8 @@ runs:
           "USER=${{ steps.pre-build.outputs.user }}"
           "UID=${{ steps.pre-build.outputs.uid }}"
           "GID=${{ steps.pre-build.outputs.gid }}"
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+        cache-from: type=gha,scope=${{ inputs.cache_scope }}
+        cache-to: type=gha,mode=max,scope=${{ inputs.cache_scope }}
 
     - name: Post-Build Docker Image
       id: post-build

@@ -13,6 +13,10 @@ on:
         default: "flat_build"
         description: Type of build to perform (flat_build or sdk_build)
 
+permissions:
+  contents: read
+  actions: write
+
 jobs:
   build:
     runs-on:
@@ -26,6 +30,8 @@ jobs:
       - name: Build docker Image
         id: get-docker-image
         uses: Audioreach/meta-audioreach/.github/actions/build_docker_image@master
+        with:
+          cache_scope: ar-image-${{ github.event.pull_request.number || github.ref_name }}-${{ matrix.build_matrix.machine_name }}
 
       - name: Sync Codebase
         id: sync
