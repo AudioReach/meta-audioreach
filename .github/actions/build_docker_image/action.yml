@@ -44,7 +44,7 @@ runs:
           "UID=${{ steps.pre-build.outputs.uid }}"
           "GID=${{ steps.pre-build.outputs.gid }}"
         cache-from: type=gha
-        cache-to: type=gha,mode=max
+        cache-to: type=gha,mode=min,ignore-error=true
 
     - name: Post-Build Docker Image
       id: post-build
