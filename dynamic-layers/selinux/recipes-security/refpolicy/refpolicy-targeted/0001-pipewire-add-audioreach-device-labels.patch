@@ -1,0 +1,39 @@
+From: Chiluka Rohith <rchiluka@qti.qualcomm.com>
+Date: Wed, 30 Apr 2026 00:00:00 +0530
+Subject: [PATCH] pipewire: add AudioReach device labels
+
+Extend the SELinux devices policy with Qualcomm AudioReach specific
+device node labels, consistent with the existing /dev/adsp.* labeling
+convention.
+
+/dev/aud_pasthru.* (AudioReach GPR passthrough char devices used by
+audioreach-graphservices for ADSP communication) and
+/dev/msm_audio_mem.* (AudioReach shared memory allocator used by
+ar_osal for ADSP buffer allocation, including the CMA variant
+/dev/msm_audio_mem_cma) are labeled sound_device_t. This allows
+pipewire_t to access them via the existing dev_read_sound/dev_write_sound
+interfaces without broadening access to the generic device_t.
+
+These device nodes are created by the Qualcomm AudioReach kernel
+driver and are not present on non-Qualcomm platforms.
+
+Upstream-Status: Inappropriate [Qualcomm-specific AudioReach device
+nodes not present on non-Qualcomm platforms]
+
+Signed-off-by: Chiluka Rohith <rchiluka@qti.qualcomm.com>
+---
+ policy/modules/kernel/devices.fc | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/policy/modules/kernel/devices.fc b/policy/modules/kernel/devices.fc
+--- a/policy/modules/kernel/devices.fc
++++ b/policy/modules/kernel/devices.fc
+@@ -7,6 +7,8 @@
+ /dev/3dfx		-c	gen_context(system_u:object_r:xserver_misc_device_t,s0)
+ /dev/admmidi.*		-c	gen_context(system_u:object_r:sound_device_t,s0)
+ /dev/adsp.*		-c	gen_context(system_u:object_r:sound_device_t,s0)
++/dev/aud_pasthru.*	-c	gen_context(system_u:object_r:sound_device_t,s0)
++/dev/msm_audio_mem.*	-c	gen_context(system_u:object_r:sound_device_t,s0)
+ /dev/(misc/)?agpgart	-c	gen_context(system_u:object_r:agp_device_t,s0)
+ /dev/aload.*		-c	gen_context(system_u:object_r:sound_device_t,s0)
+ /dev/amidi.*		-c	gen_context(system_u:object_r:sound_device_t,s0)
