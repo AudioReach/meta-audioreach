@@ -12,10 +12,6 @@ repos:
 
   meta-openembedded:
     url: https://github.com/openembedded/meta-openembedded
-    patches:
-      plain:
-        repo: meta-qcom
-        path: patches/meta-oe/0001-mariadb-fix-building-for-the-ARMv8.3-A-and-later-sys.patch
     layers:
       meta-filesystems:
       meta-gnome:
@@ -26,7 +22,7 @@ repos:
       meta-xfce:
 
   meta-virtualization:
-    url: https://git.yoctoproject.org/git/meta-virtualization
+    url: https://git.yoctoproject.org/meta-virtualization
     branch: master
 
   meta-selinux:

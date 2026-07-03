@@ -21,15 +21,34 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y gawk wget git-core diffstat unzip texinfo gcc build-essential \
             chrpath socat cpio python3 python3-pip python3-pexpect xz-utils debianutils iputils-ping \
-            python3-git python3-jinja2 libegl-mesa0 libsdl1.2-dev pylint
+            python3-git python3-jinja2 python3-yaml libegl-mesa0 libsdl1.2-dev pylint
 
       - name: Poky Setup 
         run: |
+          set -euo pipefail
           cd ..
-          git clone https://git.openembedded.org/bitbake
-          git clone https://git.yoctoproject.org/meta-yocto
-          git clone https://git.openembedded.org/openembedded-core
-          git clone https://git.openembedded.org/meta-openembedded
+
+          python3 - <<'PY'
+          import subprocess
+          import urllib.request
+          import yaml
+
+          lock_url = "https://raw.githubusercontent.com/qualcomm-linux/meta-qcom/master/ci/base.lock.yml"
+          with urllib.request.urlopen(lock_url) as f:
+              lock = yaml.safe_load(f.read().decode("utf-8"))
+
+          commits = lock["overrides"]["repos"]
+
+          repos = {
+              "bitbake": ("https://github.com/openembedded/bitbake", commits["bitbake"]["commit"]),
+              "openembedded-core": ("https://github.com/openembedded/openembedded-core", commits["oe-core"]["commit"]),
+              "meta-openembedded": ("https://github.com/openembedded/meta-openembedded", commits["meta-openembedded"]["commit"]),
+          }
+
+          for directory, (url, commit) in repos.items():
+              subprocess.run(["git", "clone", url, directory], check=True)
+              subprocess.run(["git", "-C", directory, "checkout", commit], check=True)
+          PY
 
       - name: Source Environment and Run Layer Check
         run: |
