@@ -8,7 +8,6 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=d683615f65309f6c050cbd1bb2b3c575"
 SRC_URI = "git://github.com/AudioReach/audioreach-kernel.git;protocol=https;branch=master \
            file://audioreach.rules \
            file://asoc-blacklist.conf \
-           file://v1-0001-audioreach-driver-audioreach-common-Fix-WSA-Mute-.patch \
     "
 SRCREV = "664f553de5295ca95f1dfe41fa6fba00f6035d9c"
 
