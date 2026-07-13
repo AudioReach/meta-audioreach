@@ -16,7 +16,11 @@ SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""
 INSANE_SKIP:${PN} = "dev-so"
 
-PACKAGECONFIG[qcom] = "--with-qcom, --without-qcom, audioreach-kernel"
+# audioreach-kernel provides UAPI headers (linux/msm_audio.h) needed by
+# osal shmem DMA based implementation.
+PACKAGECONFIG[audio_dma_support] = "--with-audio_dma_support, --without-audio_dma_support, audioreach-kernel"
+
+PACKAGECONFIG:append:qcom = " audio_dma_support"
 PACKAGECONFIG[are_on_apps] = "--with-are-on-apps, --without-are-on-apps"
 
 inherit autotools pkgconfig
