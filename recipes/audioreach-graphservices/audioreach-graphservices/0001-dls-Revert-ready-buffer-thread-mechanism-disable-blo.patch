@@ -1,0 +1,224 @@
+From ca9d11d59187b12567c5f49ba6f6be2af5d18ab4 Mon Sep 17 00:00:00 2001
+From: Aditya Rathi <aditrath@qti.qualcomm.com>
+Date: Thu, 16 Jul 2026 20:30:20 +0530
+Subject: [PATCH] dls: Revert ready buffer thread mechanism, disable blocking
+ ACK wait.
+
+PCM data logging over DLS is not working correctly even after the ADSP
+thread fix. As a short term solution, revert the ready buffer handling
+and thread mechanism introduced for ADSP master proc support, and
+disable the blocking ACK wait in gsl_dls_client_return_used_buffers().
+Dynamic ADSP/APPS domain routing via gsl_dls_client_alloc_dls_msg()
+is retained.
+
+Signed-off-by: Aditya Rathi <aditrath@qti.qualcomm.com>
+---
+ acdb/ats/dls/common/src/ats_dls.c        | 50 +-----------------------
+ gsl/dls_client_api/gsl_dls_client_intf.h |  7 ----
+ gsl/inc/gsl_dls_client.h                 |  8 ----
+ gsl/src/gsl_dls_client.c                 | 34 ++--------------
+ 4 files changed, 5 insertions(+), 94 deletions(-)
+
+diff --git a/acdb/ats/dls/common/src/ats_dls.c b/acdb/ats/dls/common/src/ats_dls.c
+index f621145..9581839 100644
+--- a/acdb/ats/dls/common/src/ats_dls.c
++++ b/acdb/ats/dls/common/src/ats_dls.c
+@@ -45,9 +45,6 @@ struct gsl_dls_buffer_pool_config_t buffer_pool_config;
+ AtsBuffer dls_data_send_buffer;
+ ar_osal_mutex_t buffer_ready_lock;
+ ATS_DSL_TCPIP_SEND_CALLBACK ats_dls_tcpip_send_callback;
+-ar_osal_thread_t thd_ready_buffer_routine;
+-bool thd_ready_buffer_routine_active = true;
+-
+ #if defined(_DEVICE_SIM)
+ int32_t gsl_dls_client_is_feature_supported()
+ {
+@@ -272,48 +269,13 @@ int32_t ats_dls_get_log_data(
+ 	// ATS_MEM_CPY_SAFE(rsp_buf, sizeof(uint32_t), &rsp, sizeof(AtsDlsLogDataHeader));
+ 	*rsp_buf_bytes_filled += sizeof(AtsDlsLogDataHeader) + rsp.total_log_data_size;
+ 
+-	ATS_DBG("set used buffers to gsl");
+-	gsl_dls_client_set_used_buffers(&ready_buffer_index_list);
++	ATS_DBG("return buffers to spf");
++	gsl_dls_client_return_used_buffers(&ready_buffer_index_list);
+ 	ATS_DBG("done returning buffers to spf");
+ 
+ 	return status;
+ }
+ 
+-void ats_dls_ready_buffer_thd(void* params){
+-
+-	while(thd_ready_buffer_routine_active)
+-	{
+-	   //wait for signal and release ready buffers to dsp
+-	   ATS_DBG("return buffers to spf");
+-	   gsl_dls_client_return_used_buffers(NULL);
+-	   ATS_DBG("done returning buffers to spf");
+-	}
+-}
+-
+-int32_t ats_dls_create_ready_buffer_thread()
+-{
+-	int32_t status = AR_EOK;
+-	char_t* thd_name = "ATS_DLS_RDY_THD";
+-	ar_osal_thread_attr_t thd_attr =
+-    {
+-        thd_name,
+-        0xF4240,
+-        0,
+-    };
+-
+-    ar_osal_thread_start_routine r = \
+-        (ar_osal_thread_start_routine)(ats_dls_ready_buffer_thd);
+-
+-    status = ar_osal_thread_create(&thd_ready_buffer_routine, &thd_attr, r, NULL);
+-    if (AR_FAILED(status))
+-    {
+-        ATS_ERR("Error[%d]: Failed to create thread %s", status, thd_name);
+-        return status;
+-    }
+-
+-	return status;
+-}
+-
+ int32_t ats_dls_ioctl(
+ 	uint32_t svc_cmd_id,
+ 	uint8_t *cmd_buf,
+@@ -410,15 +372,9 @@ int32_t ats_dls_init(ATS_DSL_TCPIP_SEND_CALLBACK callback)
+ 	dls_data_send_buffer.buffer = ACDB_MALLOC(uint8_t, dls_data_send_buffer.buffer_size);
+ 
+ 	ats_dls_tcpip_send_callback = callback;
+-
+-	//start ready buffer thread
+-	ats_dls_create_ready_buffer_thread();
+ destroy_lock:
+ 	if(AR_FAILED(status))
+-	{
+-		ar_osal_thread_join_destroy(thd_ready_buffer_routine);
+ 		ar_osal_mutex_destroy(buffer_ready_lock);
+-	}
+ 
+ 	return status;
+ }
+@@ -450,8 +406,6 @@ int32_t ats_dls_deinit(void)
+ 
+ 	ar_osal_mutex_destroy(buffer_ready_lock);
+ 
+-	thd_ready_buffer_routine_active = false;
+-	ar_osal_thread_join_destroy(thd_ready_buffer_routine);
+ 	//free ats dls send buffer
+ 
+ 	return status;
+diff --git a/gsl/dls_client_api/gsl_dls_client_intf.h b/gsl/dls_client_api/gsl_dls_client_intf.h
+index 53ba41e..ec3390f 100644
+--- a/gsl/dls_client_api/gsl_dls_client_intf.h
++++ b/gsl/dls_client_api/gsl_dls_client_intf.h
+@@ -116,13 +116,6 @@ void gsl_dls_client_get_ready_dls_buffer_list(struct gsl_dls_ready_buffer_index_
+  */
+ int32_t gsl_dls_client_get_log_buffer(uint32_t log_buffer_index, struct gls_dls_buffer_t* dls_log_buffer);
+ 
+-/**
+- * \brief Stores used log buffers in gsl dsl client context
+- *
+- * \param[in] buffer_index_list: list of buffers to be stored
+- */
+-void gsl_dls_client_set_used_buffers(struct gsl_dls_ready_buffer_index_list_t *buffer_index_list);
+-
+ /**
+  * \brief Returns used DLS buffers back to SPF
+  *
+diff --git a/gsl/inc/gsl_dls_client.h b/gsl/inc/gsl_dls_client.h
+index 7079987..33d3daf 100644
+--- a/gsl/inc/gsl_dls_client.h
++++ b/gsl/inc/gsl_dls_client.h
+@@ -63,14 +63,6 @@ struct gsl_dls_client_ctxt
+      * lock used in conjuction with above signal
+      */
+     ar_osal_mutex_t sig_lock;
+-    /**
+-     * for signaling when to return used buffers to spf
+-     */
+-    struct gsl_signal ready_buffer_sig;
+-    /**
+-     * List of used buffers to send to spf
+-     */
+-    struct gsl_dls_ready_buffer_index_list_t used_buffers;
+ };
+ 
+ #ifdef __cplusplus
+diff --git a/gsl/src/gsl_dls_client.c b/gsl/src/gsl_dls_client.c
+index f57f02b..f31caf9 100644
+--- a/gsl/src/gsl_dls_client.c
++++ b/gsl/src/gsl_dls_client.c
+@@ -267,13 +267,6 @@ int32_t gsl_dls_client_get_log_buffer(uint32_t log_buffer_index, struct gls_dls_
+     return rc;
+ }
+ 
+-void gsl_dls_client_set_used_buffers(struct gsl_dls_ready_buffer_index_list_t *buffer_index_list)
+-{
+-    //Store used buffers in gsl dsl client context
+-    gsl_memcpy(&dls_client_ctxt.used_buffers, sizeof(dls_client_ctxt.used_buffers), buffer_index_list,
+-                sizeof(dls_client_ctxt.used_buffers));
+-}
+-
+ int32_t gsl_dls_client_return_used_buffers(struct gsl_dls_ready_buffer_index_list_t *buffer_index_list)
+ {
+     int32_t rc = AR_EFAILED;
+@@ -281,20 +274,8 @@ int32_t gsl_dls_client_return_used_buffers(struct gsl_dls_ready_buffer_index_lis
+     gsl_msg_t gsl_msg;
+     dls_data_cmd_buffer_return_t *dls_buf_ret_cfg;
+     uint32_t dls_buffer_offset = 0;
+-    uint32_t signal_flags = 0;
+-    uint32_t dls_buf_ret_cfg_size = 0;
+-
+-    rc = gsl_signal_timedwait(&dls_client_ctxt.ready_buffer_sig, GSL_SPF_TIMEOUT_MS,
+-        &signal_flags, NULL, NULL);
+-    if (rc) {
+-        GSL_ERR("ready buffer signal wait failed | status %d", rc);
+-        return rc;
+-    }
+-
+-    buffer_index_list = &dls_client_ctxt.used_buffers;
+-
+-    dls_buf_ret_cfg_size =  GSL_ALIGN_8BYTE(sizeof(uint32_t)
+-                            + (buffer_index_list->buffer_count * sizeof(dls_buf_start_addr_t)));
++    uint32_t dls_buf_ret_cfg_size = GSL_ALIGN_8BYTE(sizeof(uint32_t)
++                                    + (buffer_index_list->buffer_count * sizeof(dls_buf_start_addr_t)));
+ 
+     rc = gsl_dls_client_alloc_dls_msg(DLS_DATA_CMD_BUFFER_RETURN, sizeof(*apm_hdr),
+                                       dls_buf_ret_cfg_size, &gsl_msg);
+@@ -313,8 +294,7 @@ int32_t gsl_dls_client_return_used_buffers(struct gsl_dls_ready_buffer_index_lis
+         dls_buf_ret_cfg->buf_start_addr[i].mem_map_handle = dls_client_ctxt.dls_shmem.spf_mmap_handle;
+     }
+ 
+-	rc = gsl_send_spf_cmd_wait_for_basic_rsp(&gsl_msg.gpr_packet,
+-	        &dls_client_ctxt.sig);
++	rc = gsl_send_spf_cmd_wait_for_basic_rsp(&gsl_msg.gpr_packet, NULL);
+     if (AR_FAILED(rc)) {
+         GSL_ERR("failed to return %d buffers to dls. status %d", dls_buf_ret_cfg->num_bufs, rc);
+     }
+@@ -429,7 +409,6 @@ static uint32_t gsl_dls_client_event_callback(gpr_packet_t *packet, void *callba
+                 packet->opcode, apm_event->event_id);
+             dls_client_ctxt.buffer_ready_callback();
+             __gpr_cmd_free(packet);
+-            gsl_signal_set(&dls_client_ctxt.ready_buffer_sig, 0, 0, NULL);
+         }
+         break;
+     }
+@@ -456,13 +435,6 @@ int32_t gsl_dls_client_init(struct gsl_dls_buffer_pool_config_t *buffer_pool_con
+         return rc;
+     }
+ 
+-    rc = gsl_signal_create(&dls_client_ctxt.ready_buffer_sig, NULL);
+-    GSL_ERR("Created ready buffer signal");
+-    if (rc) {
+-        GSL_ERR("unable to create signal for ready buffer event | status %d", rc);
+-        return rc;
+-    }
+-
+     rc = gsl_dls_client_create_buffer_pool(buffer_pool_config);
+     if (rc) {
+         GSL_ERR("unable to create shared memory pool. status %d", rc);
+-- 
+2.43.0
+
