@@ -1,0 +1,31 @@
+From a1e1d5e9dc19c55ee52853d8e94a9f417a16e7e9 Mon Sep 17 00:00:00 2001
+From: Sairamreddy Bojja <sbojja@qti.qualcomm.com>
+Date: Fri, 17 Jul 2026 18:27:29 +0530
+Subject: [PATCH] Revert "camx-dlkm: Update camx driver to v1.0.4"
+
+This reverts commit fe28c340876b7e1533b3a8bc813625612200a7de.
+Upstream-Status: Inappropriate [reverts local recipe version bump]
+---
+ .../camx/{camx-dlkm_1.0.4.bb => camx-dlkm_1.0.3.bb}             | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+ rename recipes-multimedia/camx/{camx-dlkm_1.0.4.bb => camx-dlkm_1.0.3.bb} (95%)
+
+diff --git a/recipes-multimedia/camx/camx-dlkm_1.0.4.bb b/recipes-multimedia/camx/camx-dlkm_1.0.3.bb
+similarity index 95%
+rename from recipes-multimedia/camx/camx-dlkm_1.0.4.bb
+rename to recipes-multimedia/camx/camx-dlkm_1.0.3.bb
+index 370637f6..3e746c66 100644
+--- a/recipes-multimedia/camx/camx-dlkm_1.0.4.bb
++++ b/recipes-multimedia/camx/camx-dlkm_1.0.3.bb
+@@ -7,7 +7,7 @@ SRC_URI = " \
+     git://github.com/qualcomm-linux/camera-driver.git;protocol=https;branch=camera-kernel.qclinux.0.0;tag=v${PV} \
+ "
+ 
+-SRCREV = "f073e13d7a310df5c1551f2136199f85c85db6d8"
++SRCREV = "56b463cba50c1db1f2cc53ddd8790730f14bd8a8"
+ 
+ inherit module
+ 
+-- 
+2.34.1
+

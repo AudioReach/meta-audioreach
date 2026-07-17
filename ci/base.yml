@@ -22,6 +22,10 @@ repos:
 
   meta-qcom:
     url: https://github.com/qualcomm-linux/meta-qcom.git
+    patches:
+      plain:
+        repo: meta-audioreach
+        path: patches/0001-Revert-camx-dlkm-Update-camx-driver-to-v1.0.4.patch
 
   meta-openembedded:
     url: https://github.com/openembedded/meta-openembedded
