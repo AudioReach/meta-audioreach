@@ -82,7 +82,7 @@ runs:
       with:
         repository: qualcomm-linux-stg/lava-test-plans
         path: lava-test-plans
-        ref: master
+        ref: sample
 
     - name: Setup Python
       uses: actions/setup-python@v6
