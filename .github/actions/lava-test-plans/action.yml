@@ -171,13 +171,15 @@ runs:
         cat "${VARS_OUT_PATH}/gh-variables.ini"
 
         # Generate jobs
+        # Expose the subdir where jobs were generated
+        JOBS_SUBDIR="${JOBS_OUT_PATH}/${IMAGE_NAME}-${DISTRO_NAME}-${TESTPLAN_DIR}"
         lava-test-plans \
           --dry-run \
           --variables "${VARS_OUT_PATH}/gh-variables.ini" \
           --test-plan "${PROJECT}/${DISTRO_NAME}/${TESTPLAN_DIR}" \
           --device-type "projects/${PROJECT}/devices/${MACHINE_NAME}" \
-          --dry-run-path "${JOBS_OUT_PATH}/${IMAGE_NAME}-${DISTRO_NAME}-${TESTPLAN_DIR}" || true
-
+           --dry-run-path "${JOBS_SUBDIR}" || true
+          
         # LAVA overlay compatibility:
         # 1) remove lava_test_results_dir from generated job context
         # 2) always force OVERLAY_PATH=/ in flash.settings writes
@@ -187,10 +189,7 @@ runs:
             sed -i 's#echo "OVERLAY_PATH=.*" >> \\$IMAGE_PATH/flash.settings#echo "OVERLAY_PATH=/" >> \\$IMAGE_PATH/flash.settings#g' "${yaml_file}"
           done < <(find "${JOBS_SUBDIR}" -type f -name '*.yaml' -print0)
         fi
-
-        # Expose the subdir where jobs were generated
-        JOBS_SUBDIR="${JOBS_OUT_PATH}/${IMAGE_NAME}-${DISTRO_NAME}-${TESTPLAN_DIR}"
-
+        
         # Find the first YAML job
         FIRST_JOB=$(find "${JOBS_SUBDIR}" -type f -name '*.yaml' | sort | head -n 1 || true)
         echo "first_job=${FIRST_JOB:-}" >> "$GITHUB_OUTPUT"
