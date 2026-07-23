@@ -178,6 +178,16 @@ runs:
           --device-type "projects/${PROJECT}/devices/${MACHINE_NAME}" \
           --dry-run-path "${JOBS_OUT_PATH}/${IMAGE_NAME}-${DISTRO_NAME}-${TESTPLAN_DIR}" || true
 
+        # LAVA overlay compatibility:
+        # 1) remove lava_test_results_dir from generated job context
+        # 2) always force OVERLAY_PATH=/ in flash.settings writes
+        if [ -d "${JOBS_SUBDIR}" ]; then
+          while IFS= read -r -d '' yaml_file; do
+            sed -i '/lava_test_results_dir/d' "${yaml_file}"
+            sed -i 's#echo "OVERLAY_PATH=.*" >> \\$IMAGE_PATH/flash.settings#echo "OVERLAY_PATH=/" >> \\$IMAGE_PATH/flash.settings#g' "${yaml_file}"
+          done < <(find "${JOBS_SUBDIR}" -type f -name '*.yaml' -print0)
+        fi
+
         # Expose the subdir where jobs were generated
         JOBS_SUBDIR="${JOBS_OUT_PATH}/${IMAGE_NAME}-${DISTRO_NAME}-${TESTPLAN_DIR}"
 
