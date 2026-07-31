@@ -1,0 +1,154 @@
+name: trigger_lava_on_success
+
+on:
+  workflow_run:
+    workflows: ["pre_merge_build", "post_merge_build"]
+    types:
+      - completed
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  prepare_matrix:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    outputs:
+      test_matrix: ${{ steps.matrix.outputs.test_matrix }}
+      build_urls: ${{ steps.read_url.outputs.build_urls }}
+
+    steps:
+      - name: Download test matrix artifact
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          name: test-matrix
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Download legacy presigned URL artifacts (txt)
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          pattern: presigned_url_*.txt
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: presigned_urls_txt
+          merge-multiple: true
+
+      - name: Download current presigned URL artifacts (json)
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          pattern: "*_presigned_urls.json"
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: presigned_urls_json
+          merge-multiple: true
+
+      - name: Read matrix JSON
+        id: matrix
+        shell: bash
+        run: |
+          test -f test_matrix.json
+          MATRIX=$(cat test_matrix.json)
+          echo "test_matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+
+      - name: Read presigned URLs
+        id: read_url
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          script: |
+            const fs = require('fs')
+            const path = require('path')
+            const txtDir = 'presigned_urls_txt'
+            const jsonDir = 'presigned_urls_json'
+            const urls = {}
+
+            // Read test matrix so we can map JSON artifact entries back to image names.
+            let images = []
+            const matrixPath = 'test_matrix.json'
+            if (fs.existsSync(matrixPath)) {
+              const matrixObj = JSON.parse(fs.readFileSync(matrixPath, 'utf8'))
+              if (Array.isArray(matrixObj)) {
+                images = matrixObj.map(x => x && x.image_name).filter(Boolean)
+              } else if (matrixObj && typeof matrixObj === 'object') {
+                images = Object.values(matrixObj).map(x => x && x.image_name).filter(Boolean)
+              }
+            }
+
+            // Legacy format support: presigned_url_<image>.txt artifacts
+            if (fs.existsSync(txtDir)) {
+              const txtEntries = fs.readdirSync(txtDir)
+              for (const entry of txtEntries) {
+                const fullPath = path.join(txtDir, entry)
+                if (fs.statSync(fullPath).isFile()) {
+                  const content = fs.readFileSync(fullPath, 'utf8').trim()
+                  if (content) {
+                    urls[entry] = content
+                  }
+                }
+              }
+            }
+
+            // Current format support: *_presigned_urls.json artifacts
+            if (fs.existsSync(jsonDir)) {
+              const jsonEntries = fs.readdirSync(jsonDir).filter(name => name.endsWith('.json'))
+              for (const entry of jsonEntries) {
+                const fullPath = path.join(jsonDir, entry)
+                if (!fs.statSync(fullPath).isFile()) continue
+
+                const data = JSON.parse(fs.readFileSync(fullPath, 'utf8'))
+                if (!data || typeof data !== 'object') continue
+
+                const fileEntries = Object.entries(data)
+                for (const image of images) {
+                  const key = `presigned_url_${image}.txt`
+                  if (urls[key]) continue
+
+                  // Prefer root filesystem archives and exclude vision archives when possible.
+                  const preferred = fileEntries.find(([name]) =>
+                    name.includes(image) &&
+                    (name.endsWith('.tar.gz') || name.endsWith('.tar.bz2')) &&
+                    !name.includes('vision')
+                  )
+                  const fallback = fileEntries.find(([name]) => name.includes(image))
+                  const matched = preferred || fallback
+
+                  if (matched && matched[1]) {
+                    urls[key] = matched[1]
+                  }
+                }
+              }
+            }
+
+            if (Object.keys(urls).length === 0) {
+              throw new Error(
+                'No usable presigned URL artifacts were found. ' +
+                'Expected legacy presigned_url_*.txt or current *_presigned_urls.json artifacts ' +
+                `for run-id ${process.env.GITHUB_RUN_ID || 'unknown'}.`
+              )
+            }
+
+            core.info(`Resolved ${Object.keys(urls).length} build URL(s)`)
+            core.setOutput('build_urls', JSON.stringify(urls))
+
+      - name: Re-upload presigned URL artifacts
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: presigned_urls
+          path: |
+            presigned_urls_txt
+            presigned_urls_json
+
+  trigger_lava:
+    needs: prepare_matrix
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+    uses: Audioreach/meta-audioreach/.github/workflows/test.yml@master
+    secrets:
+      LAVATOKEN: ${{ secrets.LAVATOKEN }}
+    with:
+      build_matrix: ${{ needs.prepare_matrix.outputs.test_matrix }}
+      build_urls: ${{ needs.prepare_matrix.outputs.build_urls }}
+      testplan: ${{ github.event.workflow_run.name == 'post_merge_build' && 'post-merge' || 'pre-merge' }}
