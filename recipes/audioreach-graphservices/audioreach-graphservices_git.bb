@@ -25,6 +25,9 @@ PACKAGECONFIG[audio_dma_support] = "--with-audio_dma_support, --without-audio_dm
 
 PACKAGECONFIG:append:qcom = " audio_dma_support"
 PACKAGECONFIG[are_on_apps] = "--with-are-on-apps, --without-are-on-apps"
+PACKAGECONFIG[mdsp_proc] = "--with-mdsp-proc, --without-mdsp-proc"
+
+PACKAGECONFIG:append:shikra-evk = " mdsp_proc"
 
 inherit autotools pkgconfig
 RRECOMMENDS:${PN} = " \
