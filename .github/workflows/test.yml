@@ -9,6 +9,10 @@ on:
         required: true
         type: string
         description: Build matrix for the test job
+      build_urls:
+        required: false
+        type: string
+        description: JSON map of image_name to build URL (optional compatibility input)
       
       # === Optional knobs for lava-test-plans ===
       distro_name:
@@ -48,7 +52,9 @@ on:
         required: false
         type: boolean
         default: true
-
+    secrets:
+      LAVATOKEN:
+        required: true
 jobs:
  submit_lava:
     runs-on:
@@ -65,37 +71,50 @@ jobs:
         uses: Audioreach/meta-audioreach/.github/actions/sync@master
         with:
           event_name: ${{ github.event_name }}
-          pr_ref:  ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.ref || '' }}
-          pr_repo: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.full_name || '' }}
+          pr_ref:  ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || '' }}
+          pr_repo: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || '' }}
           base_ref: ${{ github.ref_name }}
 
-      - name: Process URLs
-        id: process_urls
-        uses: Audioreach/meta-audioreach/.github/actions/process_urls@master
+      - name: Get build URL
+        id: get_build_url
+        uses: actions/github-script@v8
         env:
-          MACHINE: ${{ matrix.build_matrix.machine_name }}
-          ARTIFACT_KEY: ${{ matrix.build_matrix.kas_file }}
+          BUILD_URLS_JSON: ${{ inputs.build_urls }}
+          IMAGE_NAME: ${{ matrix.build_matrix.image_name }}
+        with:
+          script: |
+            const urls = JSON.parse(process.env.BUILD_URLS_JSON || '{}')
+            const image = process.env.IMAGE_NAME
+
+            const key = `presigned_url_${image}.txt`
+            const matched = urls[key]
+
+            if (!matched) {
+              throw new Error(`No exact build URL found for image: ${image}`)
+            }
+
+            console.log(`Using URL for ${image}: ${matched}`)
+            core.setOutput('build_url', matched)
 
       - name: Print trigger info
-        id: print_trigger
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BUILD_URL: ${{ steps.get_build_url.outputs.build_url }}
+          IMAGE_NAME: ${{ matrix.build_matrix.image_name }}
+          MACHINE_NAME: ${{ matrix.build_matrix.machine_name }}
         run: |
-          echo "Triggered by ${{ github.event_name }}"
-          echo "Build URL: ${{ steps.process_urls.outputs.flat_build_url }}"
-          echo "Build file name: ${{ steps.process_urls.outputs.filename }}"
-          echo "Image: ${{ matrix.build_matrix.image_name }}"
-          echo "Machine: ${{ matrix.build_matrix.machine_name }}"
-          KAS_FILE="${{ matrix.build_matrix.kas_file }}"
-          KAS_FILE="${KAS_FILE##*/}"
-          IMAGE_NAME="${KAS_FILE%.*}"
-          echo "image_name=$IMAGE_NAME" >> "$GITHUB_OUTPUT" 
+          echo "Triggered by \"$EVENT_NAME\""
+          echo "Build URL: \"$BUILD_URL\""
+          echo "Image: \"$IMAGE_NAME\""
+          echo "Machine: \"$MACHINE_NAME\""
       
       - name: Submit LAVA test job
         id: lava_submit
         uses: Audioreach/meta-audioreach/.github/actions/lava-test-plans@master
         with:
-          image_name: ${{ steps.print_trigger.outputs.image_name}}
+          image_name: ${{ matrix.build_matrix.image_name }}
           machine_name: ${{ matrix.build_matrix.machine_name }}
-          build_url: ${{ steps.process_urls.outputs.flat_build_url }}
+          build_url: ${{ steps.get_build_url.outputs.build_url }}
           distro_name: ${{ inputs.distro_name }}
           kernel: ${{ inputs.kernel }}
           testplan: ${{ inputs.testplan }}
