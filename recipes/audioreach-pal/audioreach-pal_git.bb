@@ -13,9 +13,17 @@ SRC_URI  = "${SRCPROJECT};protocol=https;branch=${SRCBRANCH}"
 
 inherit autotools pkgconfig systemd
 
-DEPENDS = "tinyalsa tinycompress audioreach-graphmgr audioreach-graphservices audioreach-conf audioreach-audio-utils audioreach-pal-headers"
+DEPENDS = "tinyalsa tinycompress audioreach-graphmgr audioreach-graphservices audioreach-conf audioreach-audio-utils"
+PROVIDES += "audioreach-pal-headers"
 
 EXTRA_OECONF += " --with-glib --with-syslog"
+
+PACKAGES =+ "${PN}-headers"
+
+FILES:${PN}-headers = " \
+    ${includedir}/pal \
+    ${libdir}/pkgconfig/pal-headers.pc \
+"
 
 SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""
