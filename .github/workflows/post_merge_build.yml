@@ -10,7 +10,7 @@ on:
         default: 'post-merge'
   push:
     branches:
-      - master
+      - ci
     paths-ignore:
       - '.github/**'
 

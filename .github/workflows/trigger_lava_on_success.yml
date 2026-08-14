@@ -145,7 +145,7 @@ jobs:
       contents: read
       checks: write
       pull-requests: write
-    uses: Audioreach/meta-audioreach/.github/workflows/test.yml@master
+    uses: Audioreach/meta-audioreach/.github/workflows/test.yml@ci
     secrets:
       LAVATOKEN: ${{ secrets.LAVATOKEN }}
     with:

@@ -15,6 +15,7 @@ runs:
       with:
         fetch-depth: 0
         repository: Audioreach/ar-image
+        ref: test
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
