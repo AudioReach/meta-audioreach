@@ -2,6 +2,9 @@
 
 header:
   version: 14
+  includes:
+  - repo: meta-qcom
+    file: ci/ci.yml
 
 distro: nodistro
 
