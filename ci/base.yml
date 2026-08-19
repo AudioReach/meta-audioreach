@@ -22,10 +22,11 @@ repos:
     url: https://github.com/openembedded/bitbake
     layers:
       .: excluded
-
   meta-qcom:
     url: https://github.com/qualcomm-linux/meta-qcom.git
-    ref: 2c63ba215f7a1118497c5ade2d2040c6aef4bb11
+    commit: 2c63ba215f7a1118497c5ade2d2040c6aef4bb11
+    layers:
+      meta-qcom:
 
   meta-openembedded:
     url: https://github.com/openembedded/meta-openembedded
