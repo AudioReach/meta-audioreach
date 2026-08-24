@@ -80,17 +80,17 @@ jobs:
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           BUILD_URLS_JSON: ${{ inputs.build_urls }}
-          IMAGE_NAME: ${{ matrix.build_matrix.image_name }}
+          KAS_BASENAME: ${{ matrix.build_matrix.kas_basename }}
         with:
           script: |
             const urls = JSON.parse(process.env.BUILD_URLS_JSON || '{}')
-            const image = process.env.IMAGE_NAME
+            const image = process.env.KAS_BASENAME
 
             const key = `presigned_url_${image}.txt`
             const matched = urls[key]
 
             if (!matched) {
-              throw new Error(`No exact build URL found for image: ${image}`)
+              throw new Error(`No exact build URL found for build variant: ${image}`)
             }
 
             console.log(`Using URL for ${image}: ${matched}`)
@@ -114,6 +114,7 @@ jobs:
         with:
           image_name: ${{ matrix.build_matrix.image_name }}
           machine_name: ${{ matrix.build_matrix.machine_name }}
+          kas_basename: ${{ matrix.build_matrix.kas_basename }}
           build_url: ${{ steps.get_build_url.outputs.build_url }}
           distro_name: ${{ inputs.distro_name }}
           kernel: ${{ inputs.kernel }}

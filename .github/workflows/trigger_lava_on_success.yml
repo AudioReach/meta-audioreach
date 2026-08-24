@@ -69,9 +69,9 @@ jobs:
             if (fs.existsSync(matrixPath)) {
               const matrixObj = JSON.parse(fs.readFileSync(matrixPath, 'utf8'))
               if (Array.isArray(matrixObj)) {
-                images = matrixObj.map(x => x && x.image_name).filter(Boolean)
+                images = matrixObj.map(x => x && x.kas_basename).filter(Boolean)
               } else if (matrixObj && typeof matrixObj === 'object') {
-                images = Object.values(matrixObj).map(x => x && x.image_name).filter(Boolean)
+                images = Object.values(matrixObj).map(x => x && x.kas_basename).filter(Boolean)
               }
             }
 
@@ -105,12 +105,15 @@ jobs:
                   if (urls[key]) continue
 
                   // Prefer root filesystem archives and exclude vision archives when possible.
+                  // Match on "<image>." rather than a bare substring so a shorter identifier
+                  // (e.g. "rb3gen2-core-kit") can't accidentally match a longer sibling variant's
+                  // file (e.g. "rb3gen2-core-kit-6.18...").
                   const preferred = fileEntries.find(([name]) =>
-                    name.includes(image) &&
+                    name.includes(`${image}.`) &&
                     (name.endsWith('.tar.gz') || name.endsWith('.tar.bz2')) &&
                     !name.includes('vision')
                   )
-                  const fallback = fileEntries.find(([name]) => name.includes(image))
+                  const fallback = fileEntries.find(([name]) => name.includes(`${image}.`))
                   const matched = preferred || fallback
 
                   if (matched && matched[1]) {

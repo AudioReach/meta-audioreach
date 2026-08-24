@@ -9,7 +9,10 @@ inputs:
   machine_name:
     description: 'Machine name for the build'
     required: true
-  
+  kas_basename:
+    description: 'Unique build-variant identifier (kas file basename, e.g. rb3gen2-core-kit-6.18) used for artifact/file naming'
+    required: true
+
   # Build URL
   build_url:
     description: 'Presigned URL for the build artifact'
@@ -97,6 +100,7 @@ runs:
         TESTPLAN_INPUT: ${{ inputs.testplan }}
         IMAGE_NAME: ${{ inputs.image_name }}
         MACHINE_NAME: ${{ inputs.machine_name }}
+        KAS_BASENAME: ${{ inputs.kas_basename }}
         BUILD_URL: ${{ inputs.build_url }}
         RUN_ID: ${{ inputs.run_id }}
         RUN_ATTEMPT: ${{ inputs.run_attempt }}
@@ -156,7 +160,7 @@ runs:
           echo "AUTO_LOGIN_PASSWORD_PROMPT=Password" >> "${VARS_OUT_PATH}/gh-variables.ini"
           echo "AUTO_LOGIN_PASSWORD=oelinux123"     >> "${VARS_OUT_PATH}/gh-variables.ini"
         fi
-        echo "IMAGE_FILE_NAME=${IMAGE_TYPE}-${IMAGE_NAME}.rootfs.qcomflash.tar.gz" >> "${VARS_OUT_PATH}/gh-variables.ini"
+        echo "IMAGE_FILE_NAME=${IMAGE_TYPE}-${KAS_BASENAME}.rootfs.qcomflash.tar.gz" >> "${VARS_OUT_PATH}/gh-variables.ini"
 
         # Use the presigned URL as-is
         if [ -z "${BUILD_URL}" ]; then
@@ -176,10 +180,10 @@ runs:
           --variables "${VARS_OUT_PATH}/gh-variables.ini" \
           --test-plan "${PROJECT}/${DISTRO_NAME}/${TESTPLAN_DIR}" \
           --device-type "projects/${PROJECT}/devices/${MACHINE_NAME}" \
-          --dry-run-path "${JOBS_OUT_PATH}/${IMAGE_NAME}-${DISTRO_NAME}-${TESTPLAN_DIR}" || true
+          --dry-run-path "${JOBS_OUT_PATH}/${KAS_BASENAME}-${DISTRO_NAME}-${TESTPLAN_DIR}" || true
 
         # Expose the subdir where jobs were generated
-        JOBS_SUBDIR="${JOBS_OUT_PATH}/${IMAGE_NAME}-${DISTRO_NAME}-${TESTPLAN_DIR}"
+        JOBS_SUBDIR="${JOBS_OUT_PATH}/${KAS_BASENAME}-${DISTRO_NAME}-${TESTPLAN_DIR}"
 
         # Find the first YAML job
         FIRST_JOB=$(find "${JOBS_SUBDIR}" -type f -name '*.yaml' | sort | head -n 1 || true)
@@ -191,7 +195,7 @@ runs:
         fi
 
         # Artifact name for upload
-        ARTIFACT_NAME="${PREFIX}-${IMAGE_NAME}-${DISTRO_NAME}"
+        ARTIFACT_NAME="${PREFIX}-${KAS_BASENAME}-${DISTRO_NAME}"
         echo "artifact_name=${ARTIFACT_NAME}" >> "$GITHUB_OUTPUT"
 
     - name: List generated files
@@ -220,7 +224,7 @@ runs:
         fail_action_on_failure: ${{ inputs.fail_action_on_failure }}
         save_result_as_artifact: true
         save_job_details: true
-        result_file_name: ${{ inputs.image_name }}
+        result_file_name: ${{ inputs.kas_basename }}
 
     - name: Update summary
       if: always()
