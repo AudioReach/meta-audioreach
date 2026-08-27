@@ -30,51 +30,56 @@ runs:
       id: sync-data
       shell: bash
       env:
+        S3_BUCKET: ${{ inputs.s3_bucket }}
+        LOCAL_FILE: ${{ inputs.local_file }}
+        DOWNLOAD_FILE: ${{ inputs.download_file }}
+        MODE: ${{ inputs.mode }}
+        WORKSPACE: ${{ github.workspace }}
         UPLOAD_LOCATION: ${{ github.repository_owner }}/${{ github.event.repository.name }}/${{ github.workflow }}/
       run: |
         echo "::group::$(printf '__________ %-100s' 'Process' | tr ' ' _)"
-        case "${{ inputs.mode }}" in
+        case "$MODE" in
           multi-upload)
             echo "Uploading files to S3 bucket..."
             first_line=true
             # Start the JSON object
-            echo "{" > ${{ github.workspace }}/presigned_urls.json
+            echo "{" > "$WORKSPACE/presigned_urls.json"
             while IFS= read -r file; do
               if [ -f "$file" ]; then
                 echo "Uploading $file..."
-                aws s3 cp "$file" s3://${{ inputs.s3_bucket }}/${{ env.UPLOAD_LOCATION }}
-                echo "Uploaded $file to s3://${{ inputs.s3_bucket }}/${{ env.UPLOAD_LOCATION }}"
+                aws s3 cp "$file" "s3://$S3_BUCKET/$UPLOAD_LOCATION"
+                echo "Uploaded $file to s3://$S3_BUCKET/$UPLOAD_LOCATION"
                 echo "Creating Pre-signed URL for $file..."
                 filename=$(basename "$file")
-                presigned_url="$(aws s3 presign s3://${{ inputs.s3_bucket }}/${{ env.UPLOAD_LOCATION }}$filename --expires-in 36000)"
+                presigned_url="$(aws s3 presign "s3://$S3_BUCKET/$UPLOAD_LOCATION$filename" --expires-in 48000)"
                 if [ "$first_line" = true ]; then
                   first_line=false
                 else
-                  echo "," >> ${{ github.workspace }}/presigned_urls.json
+                  echo "," >> "$WORKSPACE/presigned_urls.json"
                 fi
                 # Append the pre-signed URL to the file
-                echo " \"${filename}\": \"${presigned_url}\"" >> ${{ github.workspace }}/presigned_urls.json
+                echo " \"${filename}\": \"${presigned_url}\"" >> "$WORKSPACE/presigned_urls.json"
                 echo "Pre-signed URL for $file: $presigned_url"
               else
                 echo "Warning: $file does not exist or is not a regular file."
               fi
-            done < "${{ inputs.local_file }}"
+            done < "$LOCAL_FILE"
             # Close the JSON object
-            echo "}" >> ${{ github.workspace }}/presigned_urls.json
+            echo "}" >> "$WORKSPACE/presigned_urls.json"
             ;;
           single-upload)
             echo "Uploading single file to S3 bucket..."
-            aws s3 cp "${{ inputs.local_file }}" s3://${{ inputs.s3_bucket }}/${{ env.UPLOAD_LOCATION }}
-            echo "Uploaded ${{ inputs.local_file }} to s3://${{ inputs.s3_bucket }}/${{ env.UPLOAD_LOCATION }}"
-            filename=$(basename "${{ inputs.local_file }}")
-            echo "Creating Pre-signed URL for ${{ inputs.local_file }}..."
-            presigned_url="$(aws s3 presign s3://${{ inputs.s3_bucket }}/${{ env.UPLOAD_LOCATION }}${filename} --expires-in 36000)"
+            aws s3 cp "$LOCAL_FILE" "s3://$S3_BUCKET/$UPLOAD_LOCATION"
+            echo "Uploaded $LOCAL_FILE to s3://$S3_BUCKET/$UPLOAD_LOCATION"
+            filename=$(basename "$LOCAL_FILE")
+            echo "Creating Pre-signed URL for $LOCAL_FILE..."
+            presigned_url="$(aws s3 presign "s3://$S3_BUCKET/$UPLOAD_LOCATION$filename" --expires-in 48000)"
             echo "presigned_url=${presigned_url}" >> "$GITHUB_OUTPUT"
             ;;
           download)
             #Download The required file from s3
             echo "Downloading files from S3 bucket..."
-            aws s3 cp s3://${{ inputs.s3_bucket }}/${{ inputs.download_file }} .
+            aws s3 cp "s3://$S3_BUCKET/$DOWNLOAD_FILE" .
             ;;
           *)
             echo "Invalid mode. Use 'multi-upload', 'single-upload', or 'download'."
@@ -86,11 +91,13 @@ runs:
     - name: Prepare artifact file with expected name
       if: ${{ inputs.mode == 'multi-upload' }}
       shell: bash
+      env:
+        WORKSPACE: ${{ github.workspace }}
       run: |
         set -euo pipefail
         EXPECTED_NAME="${MACHINE}_${BUILD_TYPE}_${ARTIFACT_KEY_BASENAME}_presigned_urls.json"
-        SRC="${{ github.workspace }}/presigned_urls.json"
-        DST="${{ github.workspace }}/${EXPECTED_NAME}"
+        SRC="${WORKSPACE}/presigned_urls.json"
+        DST="${WORKSPACE}/${EXPECTED_NAME}"
         cp -f "$SRC" "$DST"
         echo "ARTIFACT_JSON_PATH=$DST" >> "$GITHUB_ENV"
         echo "Prepared artifact JSON: $DST"
