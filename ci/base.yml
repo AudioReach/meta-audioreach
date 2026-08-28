@@ -2,6 +2,9 @@
 
 header:
   version: 14
+  includes:
+  - repo: meta-qcom
+    file: ci/ci.yml
 
 distro: nodistro
 
@@ -22,6 +25,7 @@ repos:
 
   meta-qcom:
     url: https://github.com/qualcomm-linux/meta-qcom.git
+    commit: 2c63ba215f7a1118497c5ade2d2040c6aef4bb11
 
   meta-openembedded:
     url: https://github.com/openembedded/meta-openembedded

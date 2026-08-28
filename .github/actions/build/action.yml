@@ -40,7 +40,7 @@ inputs:
   parallel_make:
     description: "PARALLEL_MAKE value used during builds (example: -j24)"
     required: false
-    default: "-j24"
+    default: "-j 4"
 
 runs:
   using: "composite"

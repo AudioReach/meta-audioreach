@@ -80,26 +80,56 @@ jobs:
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           BUILD_URLS_JSON: ${{ inputs.build_urls }}
-          IMAGE_NAME: ${{ matrix.build_matrix.image_name }}
+          KAS_BASENAME: ${{ matrix.build_matrix.kas_basename }}
         with:
           script: |
             const urls = JSON.parse(process.env.BUILD_URLS_JSON || '{}')
-            const image = process.env.IMAGE_NAME
+            const image = process.env.KAS_BASENAME
 
             const key = `presigned_url_${image}.txt`
             const matched = urls[key]
 
             if (!matched) {
-              throw new Error(`No exact build URL found for image: ${image}`)
+              throw new Error(`No exact build URL found for build variant: ${image}`)
             }
 
             console.log(`Using URL for ${image}: ${matched}`)
             core.setOutput('build_url', matched)
 
+      - name: Re-presign build URL
+        id: represign_build_url
+        shell: bash
+        env:
+          STALE_URL: ${{ steps.get_build_url.outputs.build_url }}
+        run: |
+          set -euo pipefail
+          # The URL from the build_urls artifact was presigned right after
+          # flat_build finished, using the runner's short-lived instance-profile
+          # credentials. By the time this job runs (after the whole post_merge
+          # build workflow, including sdk_build, completes), those credentials
+          # have typically already expired, making the URL unusable even though
+          # its own --expires-in window hasn't elapsed. Re-presign fresh here,
+          # right before LAVA submission, using this job's own live credentials.
+          BASE_URL="${STALE_URL%%\?*}"
+          HOST_AND_KEY="${BASE_URL#https://}"
+          HOST="${HOST_AND_KEY%%/*}"
+          KEY="${HOST_AND_KEY#*/}"
+          BUCKET="${HOST%%.s3.*}"
+
+          if [ -z "$BUCKET" ] || [ -z "$KEY" ] || [ "$HOST" = "$KEY" ]; then
+            echo "Could not parse bucket/key from build URL; falling back to stale URL."
+            echo "build_url=${STALE_URL}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Re-presigning s3://${BUCKET}/${KEY}"
+          FRESH_URL="$(aws s3 presign "s3://${BUCKET}/${KEY}" --expires-in 48000)"
+          echo "build_url=${FRESH_URL}" >> "$GITHUB_OUTPUT"
+
       - name: Print trigger info
         env:
           EVENT_NAME: ${{ github.event_name }}
-          BUILD_URL: ${{ steps.get_build_url.outputs.build_url }}
+          BUILD_URL: ${{ steps.represign_build_url.outputs.build_url }}
           IMAGE_NAME: ${{ matrix.build_matrix.image_name }}
           MACHINE_NAME: ${{ matrix.build_matrix.machine_name }}
         run: |
@@ -114,7 +144,8 @@ jobs:
         with:
           image_name: ${{ matrix.build_matrix.image_name }}
           machine_name: ${{ matrix.build_matrix.machine_name }}
-          build_url: ${{ steps.get_build_url.outputs.build_url }}
+          kas_basename: ${{ matrix.build_matrix.kas_basename }}
+          build_url: ${{ steps.represign_build_url.outputs.build_url }}
           distro_name: ${{ inputs.distro_name }}
           kernel: ${{ inputs.kernel }}
           testplan: ${{ inputs.testplan }}

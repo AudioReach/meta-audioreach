@@ -9,6 +9,9 @@ inputs:
   machine_name:
     description: 'Machine name for the build'
     required: true
+  kas_basename:
+    description: 'Unique build-variant identifier (kas file basename, e.g. rb3gen2-core-kit-6.18) used for artifact/file naming'
+    required: true
   
   # Build URL
   build_url:
@@ -72,7 +75,7 @@ outputs:
     value: ${{ steps.generate-jobs.outputs.artifact_name }}
   lava_job_id:
     description: 'LAVA job ID (if submitted)'
-    value: ${{ steps.submit-job.outputs.job_id }}
+    value: ${{ steps.verify-job.outputs.job_id }}
 
 runs:
   using: 'composite'
@@ -97,6 +100,7 @@ runs:
         TESTPLAN_INPUT: ${{ inputs.testplan }}
         IMAGE_NAME: ${{ inputs.image_name }}
         MACHINE_NAME: ${{ inputs.machine_name }}
+        KAS_BASENAME: ${{ inputs.kas_basename }}
         BUILD_URL: ${{ inputs.build_url }}
         RUN_ID: ${{ inputs.run_id }}
         RUN_ATTEMPT: ${{ inputs.run_attempt }}
@@ -156,7 +160,12 @@ runs:
           echo "AUTO_LOGIN_PASSWORD_PROMPT=Password" >> "${VARS_OUT_PATH}/gh-variables.ini"
           echo "AUTO_LOGIN_PASSWORD=oelinux123"     >> "${VARS_OUT_PATH}/gh-variables.ini"
         fi
-        echo "IMAGE_FILE_NAME=${IMAGE_TYPE}-${IMAGE_NAME}.rootfs.qcomflash.tar.gz" >> "${VARS_OUT_PATH}/gh-variables.ini"
+        # IMAGE_FILE_NAME must match the actual uploaded tarball's basename (KAS_BASENAME-based,
+        # e.g. rb3gen2-core-kit-6.18) so the postprocess step's IMAGE_IN lookup finds the
+        # downloaded file. qdl_image_dir is set separately below because the directory *inside*
+        # the tarball is named after IMAGE_NAME, not KAS_BASENAME.
+        echo "IMAGE_FILE_NAME=${IMAGE_TYPE}-${KAS_BASENAME}.rootfs.qcomflash.tar.gz" >> "${VARS_OUT_PATH}/gh-variables.ini"
+        echo "qdl_image_dir=${IMAGE_TYPE}-${IMAGE_NAME}" >> "${VARS_OUT_PATH}/gh-variables.ini"
 
         # Use the presigned URL as-is
         if [ -z "${BUILD_URL}" ]; then
@@ -176,10 +185,10 @@ runs:
           --variables "${VARS_OUT_PATH}/gh-variables.ini" \
           --test-plan "${PROJECT}/${DISTRO_NAME}/${TESTPLAN_DIR}" \
           --device-type "projects/${PROJECT}/devices/${MACHINE_NAME}" \
-          --dry-run-path "${JOBS_OUT_PATH}/${IMAGE_NAME}-${DISTRO_NAME}-${TESTPLAN_DIR}" || true
+          --dry-run-path "${JOBS_OUT_PATH}/${KAS_BASENAME}-${DISTRO_NAME}-${TESTPLAN_DIR}" || true
 
         # Expose the subdir where jobs were generated
-        JOBS_SUBDIR="${JOBS_OUT_PATH}/${IMAGE_NAME}-${DISTRO_NAME}-${TESTPLAN_DIR}"
+        JOBS_SUBDIR="${JOBS_OUT_PATH}/${KAS_BASENAME}-${DISTRO_NAME}-${TESTPLAN_DIR}"
 
         # Find the first YAML job
         FIRST_JOB=$(find "${JOBS_SUBDIR}" -type f -name '*.yaml' | sort | head -n 1 || true)
@@ -191,7 +200,7 @@ runs:
         fi
 
         # Artifact name for upload
-        ARTIFACT_NAME="${PREFIX}-${IMAGE_NAME}-${DISTRO_NAME}"
+        ARTIFACT_NAME="${PREFIX}-${KAS_BASENAME}-${DISTRO_NAME}"
         echo "artifact_name=${ARTIFACT_NAME}" >> "$GITHUB_OUTPUT"
 
     - name: List generated files
@@ -211,6 +220,7 @@ runs:
     - name: Submit first job to LAVA
       id: submit-job
       if: ${{ steps.generate-jobs.outputs.first_job != '' }}
+      continue-on-error: true
       uses: foundriesio/lava-action@v9
       with:
         lava_token: ${{ inputs.lava_token }}
@@ -220,7 +230,97 @@ runs:
         fail_action_on_failure: ${{ inputs.fail_action_on_failure }}
         save_result_as_artifact: true
         save_job_details: true
-        result_file_name: ${{ inputs.image_name }}
+        result_file_name: ${{ inputs.kas_basename }}
+
+    # lava-action's log-polling loop has an unhandled-rejection bug: a transient
+    # network hiccup (e.g. connect timeout) talking to the LAVA server crashes its
+    # Node process, marking this GH step as failed even though the LAVA job itself
+    # keeps running server-side and may go on to pass. continue-on-error above stops
+    # that crash from failing the job outright; this step recovers the job ID from
+    # the test-job-<id>.json details file (written before the polling loop starts,
+    # so it survives the crash) and asks LAVA directly for the job's real result.
+    - name: Verify LAVA job result
+      id: verify-job
+      if: ${{ always() && steps.generate-jobs.outputs.first_job != '' }}
+      shell: bash
+      env:
+        SUBMIT_OUTCOME: ${{ steps.submit-job.outcome }}
+        LAVA_TOKEN: ${{ inputs.lava_token }}
+        LAVA_URL: ${{ inputs.lava_url }}
+        FAIL_ON_FAILURE: ${{ inputs.fail_action_on_failure }}
+      run: |
+        set -uo pipefail
+
+        DETAILS_FILE=$(ls -t "${GITHUB_WORKSPACE}"/test-job-*.json 2>/dev/null | head -n 1 || true)
+        JOB_ID=""
+        if [ -n "${DETAILS_FILE}" ]; then
+          JOB_ID=$(python3 -c "import json; print(json.load(open('${DETAILS_FILE}'))['id'])" 2>/dev/null || true)
+          if [ -n "${JOB_ID}" ]; then
+            echo "job_id=${JOB_ID}" >> "$GITHUB_OUTPUT"
+          fi
+        fi
+
+        if [ "${SUBMIT_OUTCOME}" = "success" ]; then
+          echo "Submit step already reported success; nothing to verify."
+          exit 0
+        fi
+
+        echo "Submit step outcome was '${SUBMIT_OUTCOME}' - lava-action may have crashed"
+        echo "on a transient network error while polling, rather than the LAVA job"
+        echo "itself having failed. Checking LAVA directly for the real result."
+
+        if [ -z "${JOB_ID}" ]; then
+          echo "No test-job-*.json details file found; cannot recover job ID, keeping failure."
+          exit 1
+        fi
+
+        HOST="https://${LAVA_URL}"
+        echo "Recovered LAVA job ID ${JOB_ID} from ${DETAILS_FILE}; polling ${HOST}"
+
+        STATE=""
+        HEALTH=""
+        for i in $(seq 1 60); do
+          RESP=$(curl -sf -H "Authorization: Token ${LAVA_TOKEN}" "${HOST}/api/v0.2/jobs/${JOB_ID}/" || true)
+          STATE=$(printf '%s' "${RESP}" | python3 -c "import json,sys; print(json.load(sys.stdin).get('state',''))" 2>/dev/null || true)
+          HEALTH=$(printf '%s' "${RESP}" | python3 -c "import json,sys; print(json.load(sys.stdin).get('health',''))" 2>/dev/null || true)
+          echo "Job ${JOB_ID}: state=${STATE} health=${HEALTH}"
+          [ "${STATE}" = "Finished" ] && break
+          sleep 15
+        done
+
+        LOGS=$(curl -sf -H "Authorization: Token ${LAVA_TOKEN}" "${HOST}/api/v0.2/jobs/${JOB_ID}/logs/?start=0" || true)
+        JOB_RESULT=$(printf '%s' "${LOGS}" | python3 -c '
+        import json, sys
+        result = "unknown"
+        for line in sys.stdin:
+            line = line.strip()
+            if not line.startswith("- {"):
+                continue
+            try:
+                entry = json.loads(line[2:])
+            except Exception:
+                continue
+            msg = entry.get("msg")
+            if isinstance(msg, dict) and msg.get("definition") == "lava" and msg.get("case") == "job":
+                result = msg.get("result", "unknown")
+        print(result)
+        ')
+
+        echo "result=${JOB_RESULT}" >> "$GITHUB_OUTPUT"
+        echo "LAVA job ${JOB_ID} final result: ${JOB_RESULT} (state=${STATE}, health=${HEALTH})"
+
+        if [ "${JOB_RESULT}" = "pass" ]; then
+          echo "LAVA job actually passed - overriding the lava-action crash-induced failure."
+          exit 0
+        fi
+
+        if [ "${FAIL_ON_FAILURE}" != "true" ]; then
+          echo "fail_action_on_failure is false; not failing despite result=${JOB_RESULT}."
+          exit 0
+        fi
+
+        echo "LAVA job did not pass (result=${JOB_RESULT}); keeping failure."
+        exit 1
 
     - name: Update summary
       if: always()
@@ -229,7 +329,7 @@ runs:
         IMAGE_NAME: ${{ inputs.image_name }}
         MACHINE_NAME: ${{ inputs.machine_name }}
         TESTPLAN: ${{ inputs.testplan }}
-        OUTCOME: ${{ steps.submit-job.outcome }}
+        OUTCOME: ${{ steps.verify-job.outcome }}
         FIRST_JOB: ${{ steps.generate-jobs.outputs.first_job }}
       run: |
         OUTCOME="${OUTCOME:-skipped}"
