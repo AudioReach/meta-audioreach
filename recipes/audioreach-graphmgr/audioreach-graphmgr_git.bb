@@ -5,7 +5,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=51110a366f598bc0b8f8e59141a18efb"
 
 SRCREV = "a39867a172b29754df9acca038cc28edcbec7a57"
 PV = "0.0+git"
-SRC_URI = "git://git@github.com/Audioreach/audioreach-graphmgr.git;protocol=https;branch=master"
+SRC_URI = "git://github.com/AudioReach/audioreach-graphmgr.git;protocol=https;branch=master"
 SRC_URI     += "file://agm_server.service"
 SRC_URI     += "file://agm-dbus.conf"
 
