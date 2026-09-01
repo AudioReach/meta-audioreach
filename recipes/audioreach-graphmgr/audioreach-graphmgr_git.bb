@@ -1,7 +1,7 @@
 SUMMARY = "AudioReach Graph Manager"
 
-LICENSE = "BSD-3-Clause-Clear"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=51110a366f598bc0b8f8e59141a18efb"
+LICENSE = "BSD-3-Clause"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=ef516c5438f1b599326a5e207572f477"
 
 SRCREV = "a39867a172b29754df9acca038cc28edcbec7a57"
 PV = "0.0+git"
