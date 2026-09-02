@@ -2,7 +2,7 @@ SUMMARY = "AudioReach Engine"
 HOMEPAGE = "https://github.com/Audioreach/audioreach-engine"
 
 LICENSE = "BSD-3-Clause-Clear"
-LIC_FILES_CHKSUM = "file://LICENSE;md5=b92f4957907c1bfc5cf7bb5a7ab8cefb"
+LIC_FILES_CHKSUM = "file://LICENSE;md5=bfb3270a92a12aa0191799bb8287a677"
 
 SRCREV = "${AUTOREV}"
 PV = "1.0+git${SRCPV}"
