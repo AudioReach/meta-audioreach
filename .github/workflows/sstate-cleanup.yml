@@ -1,0 +1,39 @@
+name: Sstate cache cleanup
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Weekly on Saturday at 10:22 UTC
+    - cron: "22 10 * * 6"
+
+permissions: {}
+
+env:
+  SSTATE_CACHE_DIR: /efs/qli/meta-audioreach
+
+jobs:
+  sstate-cache-cleanup:
+    runs-on:
+      group: GHA-Audioreach-SelfHosted-RG
+      labels: [ self-hosted, audior-prd-u22-sdk-x64-large-od-ephem ]
+    timeout-minutes: 120
+    steps:
+      - name: Expire unused files from the shared sstate-cache dir
+        shell: bash
+        run: |
+          CACHE_BASE="${{ env.SSTATE_CACHE_DIR }}"
+          SSTATE_DIR="${CACHE_BASE}/sstate-cache"
+          DL_DIR="${CACHE_BASE}/downloads"
+          if [ ! -d "${SSTATE_DIR}" ]; then
+            echo "sstate-cache directory not found: ${SSTATE_DIR}"
+            exit 0
+          fi
+          echo "Cleaning sstate-cache files older than 15 days in ${SSTATE_DIR}"
+          find "${SSTATE_DIR}" -type f -mtime +15 -delete
+          find "${SSTATE_DIR}" -mindepth 1 -type d -empty -delete
+          echo "Cleaning downloads files older than 30 days in ${DL_DIR}"
+          if [ -d "${DL_DIR}" ]; then
+            find "${DL_DIR}" -type f -mtime +30 -delete
+            find "${DL_DIR}" -mindepth 1 -type d -empty -delete
+          fi
+          echo "Cleanup complete."
