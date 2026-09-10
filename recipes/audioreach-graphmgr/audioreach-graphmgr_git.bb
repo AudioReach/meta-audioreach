@@ -9,7 +9,7 @@ SRC_URI = "git://git@github.com/Audioreach/audioreach-graphmgr.git;protocol=http
 SRC_URI     += "file://agm_server.service"
 SRC_URI     += "file://agm-dbus.conf"
 
-DEPENDS = "glib-2.0 tinyalsa audioreach-graphservices audioreach-conf"
+DEPENDS = "glib-2.0 tinyalsa audioreach-graphservices audioreach-conf mm-audio-headers"
 
 # Add dbus to DEPENDS only if --with-no-ipc is NOT in EXTRA_OECONF
 DEPENDS:append = "${@bb.utils.contains('EXTRA_OECONF', '--with-no-ipc', '', ' dbus', d)}"
