@@ -13,7 +13,7 @@ SRC_URI  = "${SRCPROJECT};protocol=https;branch=${SRCBRANCH}"
 
 inherit autotools pkgconfig systemd
 
-DEPENDS = "tinyalsa tinycompress audioreach-graphmgr audioreach-graphservices audioreach-conf audioreach-audio-utils"
+DEPENDS = "tinyalsa tinycompress audioreach-graphmgr audioreach-graphservices audioreach-conf mm-audio-headers audioreach-audio-utils"
 PROVIDES += "audioreach-pal-headers"
 
 EXTRA_OECONF += " --with-glib --with-syslog"
