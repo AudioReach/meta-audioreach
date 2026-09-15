@@ -14,6 +14,7 @@ DEPENDS = "audioreach-graphmgr pipewire audioreach-pal audioreach-pal-headers"
 
 FILES:${PN} += "${libdir}/pipewire-0.3/*.so"
 FILES:${PN} += "${datadir}/pipewire/pipewire.conf.d/pw-pal-plugin.conf"
+FILES:${PN} += "${datadir}/pipewire/pipewire-pulse.conf.d/pal-compress-offload-sink.conf"
 FILES:${PN} += "${datadir}/wireplumber/wireplumber.conf.d/60-disable-alsa.conf"
 FILES:${PN} += "${datadir}/wireplumber/wireplumber.conf.d/90-device-detection.conf"
 FILES:${PN} += "${datadir}/wireplumber/scripts/90-device-detection.lua"
