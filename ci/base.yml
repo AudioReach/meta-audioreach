@@ -44,6 +44,9 @@ local_conf_header:
     INHERIT += "buildhistory"
     INHERIT += "rm_work"
     IMAGE_INSTALL:append = " packagegroup-audioreach"
+  ccache: |
+    INHERIT:remove = "ccache"
+    ASSUME_PROVIDED:remove = "ccache-native"
   cmdline: |
     KERNEL_CMDLINE_EXTRA:append = " qcom_scm.download_mode=1"
   qcomflash: |
