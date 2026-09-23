@@ -12,6 +12,11 @@ on:
         type: string
         default: "flat_build"
         description: Type of build to perform (flat_build or sdk_build)
+      sstate_cache_dir:
+        required: false
+        type: string
+        default: "/efs/qli/meta-audioreach"
+        description: "Base directory for SSTATE_DIR and DL_DIR caches"
 
 jobs:
   build:
@@ -46,6 +51,7 @@ jobs:
           build_command: ${{ matrix.build_matrix.build_commands[inputs.build_type] }}  # Get command from matrix based on build type
           build_type: ${{ inputs.build_type }}
           image_name: ${{ matrix.build_matrix.image_name }}
+          sstate_cache_dir: ${{ inputs.sstate_cache_dir }}
         env:
           MACHINE: ${{ matrix.build_matrix.machine_name }}
 

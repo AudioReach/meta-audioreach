@@ -25,6 +25,7 @@ jobs:
     with:
       build_matrix: ${{ needs.load_parameters.outputs.build_matrix }}
       build_type: flat_build    # Remove build_command, use from matrix
+      sstate_cache_dir: /efs/qli/meta-audioreach
 
   sdk_build:
     needs: [load_parameters, flat_build]
@@ -33,6 +34,7 @@ jobs:
     with:
       build_matrix: ${{ needs.load_parameters.outputs.build_matrix }}
       build_type: sdk_build    # Remove build_command, use from matrix
+      sstate_cache_dir: /efs/qli/meta-audioreach
 
   filter_test_matrix:
     needs: load_parameters
