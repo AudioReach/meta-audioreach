@@ -25,7 +25,7 @@ repos:
 
   meta-qcom:
     url: https://github.com/qualcomm-linux/meta-qcom.git
-    commit: 2c63ba215f7a1118497c5ade2d2040c6aef4bb11
+    commit: cbf084dc458550b56a3cfb4ae23c91484ba4d4d8
 
   meta-openembedded:
     url: https://github.com/openembedded/meta-openembedded
@@ -44,6 +44,9 @@ local_conf_header:
     INHERIT += "buildhistory"
     INHERIT += "rm_work"
     IMAGE_INSTALL:append = " packagegroup-audioreach"
+  ccache: |
+    INHERIT:remove = "ccache"
+    ASSUME_PROVIDED:remove = "ccache-native"
   cmdline: |
     KERNEL_CMDLINE_EXTRA:append = " qcom_scm.download_mode=1"
   qcomflash: |
