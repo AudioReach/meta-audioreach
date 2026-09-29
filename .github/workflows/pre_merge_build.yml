@@ -27,6 +27,7 @@ jobs:
     with:
       build_matrix: ${{ needs.load_parameters.outputs.build_matrix }}
       build_type: flat_build
+      sstate_cache_dir: /efs/qli/meta-audioreach
 
   filter_test_matrix:
     needs: load_parameters
