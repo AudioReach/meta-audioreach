@@ -25,7 +25,6 @@ repos:
 
   meta-qcom:
     url: https://github.com/qualcomm-linux/meta-qcom.git
-    commit: cbf084dc458550b56a3cfb4ae23c91484ba4d4d8
 
   meta-openembedded:
     url: https://github.com/openembedded/meta-openembedded
