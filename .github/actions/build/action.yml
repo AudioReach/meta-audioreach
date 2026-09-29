@@ -41,6 +41,10 @@ inputs:
     description: "PARALLEL_MAKE value used during builds (example: -j24)"
     required: false
     default: "-j 4"
+  sstate_cache_dir:
+    description: "Base directory for SSTATE_DIR and DL_DIR caches (default: /efs/qli/meta-audioreach)"
+    required: false
+    default: ""
 
 runs:
   using: "composite"
@@ -58,6 +62,25 @@ runs:
         filepath="${{ github.workspace }}/${{ inputs.machine_name }}_${{ inputs.build_type }}_${ARTIFACT_KEY}_file_list.txt"
         echo "filepath=${filepath}" >> $GITHUB_ENV
         : > "$filepath"
+
+    - name: Setup sstate and download cache directories
+      shell: bash
+      run: |
+        #!/bin/bash
+        set -e
+        CACHE_BASE="${{ inputs.sstate_cache_dir }}"
+        if [ -n "${CACHE_BASE}" ]; then
+          SSTATE_DIR="${CACHE_BASE}/sstate-cache"
+          DL_DIR="${CACHE_BASE}/downloads"
+          mkdir -p "${SSTATE_DIR}" "${DL_DIR}"
+          echo "SSTATE_DIR=${SSTATE_DIR}" >> $GITHUB_ENV
+          echo "DL_DIR=${DL_DIR}" >> $GITHUB_ENV
+          echo "SSTATE_CACHE_MOUNT=-v ${SSTATE_DIR}:${SSTATE_DIR} -v ${DL_DIR}:${DL_DIR}" >> $GITHUB_ENV
+          echo "SSTATE_CACHE_ENV=SSTATE_DIR=${SSTATE_DIR} DL_DIR=${DL_DIR}" >> $GITHUB_ENV
+        else
+          echo "SSTATE_CACHE_MOUNT=" >> $GITHUB_ENV
+          echo "SSTATE_CACHE_ENV=" >> $GITHUB_ENV
+        fi
 
     - name: Build ${{ env.MACHINE }}
       shell: bash
@@ -78,6 +101,7 @@ runs:
           --user $(id -u):$(id -g) \
           -v ${WORKSPACE}:${USER_HOME}/workspace \
           -w ${USER_HOME}/workspace \
+          ${SSTATE_CACHE_MOUNT} \
           --privileged \
           --cpus=${{ inputs.docker_cpus }} \
           --memory=${{ inputs.docker_memory }} \
@@ -90,6 +114,8 @@ runs:
               export BB_NUMBER_THREADS=\"${{ inputs.bitbake_threads }}\"
               export PARALLEL_MAKE=\"${{ inputs.parallel_make }}\"
               export CARGO_BUILD_JOBS=\"${{ inputs.bitbake_threads }}\"
+              ${SSTATE_CACHE_ENV:+export SSTATE_DIR=\"${SSTATE_DIR}\"}
+              ${SSTATE_CACHE_ENV:+export DL_DIR=\"${DL_DIR}\"}
               ${{ inputs.build_command }}
             '
           "
