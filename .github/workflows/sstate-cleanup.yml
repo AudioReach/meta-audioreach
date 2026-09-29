@@ -21,9 +21,14 @@ jobs:
       - name: Expire unused files from the shared sstate-cache dir
         shell: bash
         run: |
-          CACHE_BASE="${{ env.SSTATE_CACHE_DIR }}"
-          SSTATE_DIR="${CACHE_BASE}/sstate-cache"
-          DL_DIR="${CACHE_BASE}/downloads"
+          set -euo pipefail
+          CACHE_BASE="${SSTATE_CACHE_DIR}"
+          if [ -z "${CACHE_BASE}" ]; then
+            echo "::error::SSTATE_CACHE_DIR is empty; refusing to run cleanup"
+            exit 1
+          fi
+          SSTATE_DIR="${CACHE_BASE%/}/sstate-cache"
+          DL_DIR="${CACHE_BASE%/}/downloads"
           if [ ! -d "${SSTATE_DIR}" ]; then
             echo "sstate-cache directory not found: ${SSTATE_DIR}"
             exit 0

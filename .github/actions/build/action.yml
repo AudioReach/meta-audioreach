@@ -64,26 +64,43 @@ runs:
         : > "$filepath"
 
     - name: Setup sstate and download cache directories
+      id: sstate_cache
       shell: bash
+      env:
+        CACHE_BASE: ${{ inputs.sstate_cache_dir }}
       run: |
         #!/bin/bash
-        set -e
-        CACHE_BASE="${{ inputs.sstate_cache_dir }}"
+        set -euo pipefail
+        sstate_dir=""
+        dl_dir=""
+        mount_args=""
         if [ -n "${CACHE_BASE}" ]; then
-          SSTATE_DIR="${CACHE_BASE}/sstate-cache"
-          DL_DIR="${CACHE_BASE}/downloads"
-          mkdir -p "${SSTATE_DIR}" "${DL_DIR}"
-          echo "SSTATE_DIR=${SSTATE_DIR}" >> $GITHUB_ENV
-          echo "DL_DIR=${DL_DIR}" >> $GITHUB_ENV
-          echo "SSTATE_CACHE_MOUNT=-v ${SSTATE_DIR}:${SSTATE_DIR} -v ${DL_DIR}:${DL_DIR}" >> $GITHUB_ENV
-          echo "SSTATE_CACHE_ENV=SSTATE_DIR=${SSTATE_DIR} DL_DIR=${DL_DIR}" >> $GITHUB_ENV
-        else
-          echo "SSTATE_CACHE_MOUNT=" >> $GITHUB_ENV
-          echo "SSTATE_CACHE_ENV=" >> $GITHUB_ENV
+          case "${CACHE_BASE}" in
+            /*) ;;
+            *) echo "::error::sstate_cache_dir must be an absolute path: ${CACHE_BASE}"; exit 1 ;;
+          esac
+          case "${CACHE_BASE}" in
+            *[!A-Za-z0-9/._-]*)
+              echo "::error::sstate_cache_dir may only contain [A-Za-z0-9/._-]"; exit 1 ;;
+          esac
+          base="${CACHE_BASE%/}"
+          sstate_dir="${base}/sstate-cache"
+          dl_dir="${base}/downloads"
+          mkdir -p "${sstate_dir}" "${dl_dir}"
+          mount_args="-v ${sstate_dir}:${sstate_dir} -v ${dl_dir}:${dl_dir}"
         fi
+        {
+          printf 'sstate_dir=%s\n' "${sstate_dir}"
+          printf 'dl_dir=%s\n' "${dl_dir}"
+          printf 'mount_args=%s\n' "${mount_args}"
+        } >> "$GITHUB_OUTPUT"
 
     - name: Build ${{ env.MACHINE }}
       shell: bash
+      env:
+        SSTATE_CACHE_MOUNT: ${{ steps.sstate_cache.outputs.mount_args }}
+        SSTATE_DIR_HOST: ${{ steps.sstate_cache.outputs.sstate_dir }}
+        DL_DIR_HOST: ${{ steps.sstate_cache.outputs.dl_dir }}
       run: |
         #!/bin/bash
         set -e
@@ -114,8 +131,8 @@ runs:
               export BB_NUMBER_THREADS=\"${{ inputs.bitbake_threads }}\"
               export PARALLEL_MAKE=\"${{ inputs.parallel_make }}\"
               export CARGO_BUILD_JOBS=\"${{ inputs.bitbake_threads }}\"
-              ${SSTATE_CACHE_ENV:+export SSTATE_DIR=\"${SSTATE_DIR}\"}
-              ${SSTATE_CACHE_ENV:+export DL_DIR=\"${DL_DIR}\"}
+              ${SSTATE_DIR_HOST:+export SSTATE_DIR=\"${SSTATE_DIR_HOST}\"}
+              ${DL_DIR_HOST:+export DL_DIR=\"${DL_DIR_HOST}\"}
               ${{ inputs.build_command }}
             '
           "
