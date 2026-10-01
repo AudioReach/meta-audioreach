@@ -38,7 +38,8 @@ do_install:append () {
 SYSTEMD_SERVICE:${PN} = "${@bb.utils.contains('EXTRA_OECONF', '--with-no-ipc', '', 'agm_server.service', d)}"
 RM_WORK_EXCLUDE += "${PN}"
 
-PACKAGECONFIG[are_on_apps] = "--with-are-on-apps, --without-are-on-apps, audioreach-engine"
-PACKAGECONFIG[use_default_acdb_path] = "--with-use-default-acdb-path, --without-use-default-acdb-path"
+PACKAGECONFIG[are_on_apps]              = "--with-are-on-apps, --without-are-on-apps, audioreach-engine"
+PACKAGECONFIG[use_default_acdb_path]    = "--with-use-default-acdb-path, --without-use-default-acdb-path"
+PACKAGECONFIG[ipc_dbus]                 = "--with-ipc_dbus, --without-ipc_dbus, dbus"
 
 inherit autotools pkgconfig
