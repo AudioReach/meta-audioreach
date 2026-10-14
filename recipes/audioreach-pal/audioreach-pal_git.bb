@@ -17,6 +17,11 @@ DEPENDS = "tinyalsa tinycompress audioreach-graphmgr audioreach-graphservices au
 PROVIDES += "audioreach-pal-headers"
 
 EXTRA_OECONF += " --with-glib --with-syslog"
+EXTRA_OECONF:append = " \
+    --with-pal-plugin-dir=${libdir}/audioreach-pal/plugins \
+    --with-pal-config-dir=${sysconfdir}/audioreach \
+    --with-pal-data-dir=${datadir}/audioreach \
+"
 
 PACKAGES =+ "${PN}-headers ${PN}-vui-intf-headers"
 

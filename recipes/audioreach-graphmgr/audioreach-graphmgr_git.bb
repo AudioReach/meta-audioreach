@@ -17,6 +17,11 @@ DEPENDS:append = "${@bb.utils.contains_any('EXTRA_OECONF', '--enable-alsalib --e
 
 EXTRA_OECONF += "--with-glib --with-syslog"
 EXTRA_OECONF:append:qcom = " --with-no-ipc"
+EXTRA_OECONF:append = " \
+    --with-card-def-file=${sysconfdir}/audioreach/card-defs.xml \
+    --with-backend-conf-file=${sysconfdir}/audioreach/agm/backend_conf.xml \
+    --with-acdb-path=${datadir}/audioreach/acdbdata/ \
+"
 # tinyalsa uses dlopen() to load the unversioned AGM .so at runtime
 # (see tinyalsa/src/snd_card_plugin.c), so the unversioned .so must be
 # included in the runtime package.
