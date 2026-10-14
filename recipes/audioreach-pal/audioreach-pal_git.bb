@@ -16,7 +16,7 @@ inherit autotools pkgconfig systemd
 DEPENDS = "tinyalsa tinycompress audioreach-graphmgr audioreach-graphservices audioreach-conf audioreach-audio-utils"
 PROVIDES += "audioreach-pal-headers"
 
-EXTRA_OECONF += " --with-glib --with-syslog"
+EXTRA_OECONF += " --with-glib --with-syslog --enable-upstream-support=yes"
 
 PACKAGES =+ "${PN}-headers ${PN}-vui-intf-headers"
 
