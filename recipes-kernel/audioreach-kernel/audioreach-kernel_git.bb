@@ -9,7 +9,7 @@ SRC_URI = "git://github.com/AudioReach/audioreach-kernel.git;protocol=https;bran
            file://audioreach.rules \
            file://asoc-blacklist.conf \
     "
-SRCREV = "fcf87b7d27d3fcf8b6951c493973f41931617c56"
+SRCREV = "d07214f39d12ccffacafac1f30c64df589671aab"
 
 PV = "0.0+git"
 
