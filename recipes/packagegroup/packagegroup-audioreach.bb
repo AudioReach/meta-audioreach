@@ -14,6 +14,7 @@ RDEPENDS:${PN} = " \
     audioreach-conf \
     audioreach-graphmgr \
     audioreach-graphservices \
+    mm-audio-headers \
     tinyalsa \
 "
 RDEPENDS:${PN}:append:raspberrypi4 = " \
