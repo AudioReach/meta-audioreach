@@ -28,10 +28,6 @@ repos:
     url: https://git.yoctoproject.org/meta-virtualization
     branch: master
 
-  meta-selinux:
-    branch: master
-    url: https://git.yoctoproject.org/meta-selinux
-
   meta-updater:
     branch: master
     url: https://github.com/uptane/meta-updater
