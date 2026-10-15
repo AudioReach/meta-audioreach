@@ -8,10 +8,10 @@ header:
 
 repos:
   meta-audioreach:
-    branch: ci
+    branch: master
   meta-qcom:
     url: https://github.com/qualcomm-linux/meta-qcom.git
-    commit: c2f7719707dcb4a24f423937f5bf48d37a1c2877
+    commit: cbf084dc458550b56a3cfb4ae23c91484ba4d4d8
   meta-qcom-distro:
     url: https://github.com/qualcomm-linux/meta-qcom-distro.git
-    commit: aba6f61fc69f674ab0ab9195ffb99a07beac0c9c
+    commit: ae54956ba7028d6042857d2abe93451a44a11c2e
