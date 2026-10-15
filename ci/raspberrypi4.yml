@@ -53,6 +53,8 @@ local_conf_header:
     EXTRA_IMAGE_FEATURES = "allow-empty-password empty-root-password allow-root-login"
   license-accept:
     LICENSE_FLAGS_ACCEPTED += "synaptics-killswitch"
+  image-fstypes: |
+    IMAGE_FSTYPES:append = " tar.gz"
 
 machine: raspberrypi4
 

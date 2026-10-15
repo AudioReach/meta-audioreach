@@ -92,7 +92,7 @@ runs:
           for (const [pathStr, url] of Object.entries(data)) {
             if (machine === 'raspberrypi4') {
               // For Raspberry Pi
-              if (pathStr.endsWith('.tar.bz2')) {
+              if (pathStr.endsWith('.tar.gz')) {
                 flat_build_url = url;
                 filename = pathStr;
               } else if (pathStr.endsWith('.sh')) {

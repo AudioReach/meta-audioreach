@@ -159,12 +159,16 @@ runs:
         
         # Handle different image types
         if [ "$MACHINE" = "raspberrypi4" ]; then
-          # For Raspberry Pi
-          if [ -f "${IMAGE_NAME}-${MACHINE}.tar.bz2" ]; then
-            cp "${IMAGE_NAME}-${MACHINE}.tar.bz2" "$PUB_DIR/${IMAGE_NAME}-${KAS_FILE}.tar.bz2"
-            echo "${PUB_DIR}/${IMAGE_NAME}-${KAS_FILE}.tar.bz2" >> ${{ env.filepath }}
-          
+          # For Raspberry Pi: <image>-<machine>.rootfs.tar.gz (IMAGE_FSTYPES set in kas file)
+          RPI_TARGET=$(echo "${{ inputs.build_command }}" | awk '{print $2}')
+          RPI_TAR="${RPI_TARGET}-${MACHINE}.rootfs.tar.gz"
+          if [ ! -f "$RPI_TAR" ]; then
+            echo "::error::$RPI_TAR not found in $(pwd)"
+            ls -la
+            exit 1
           fi
+          cp -L "$RPI_TAR" "$PUB_DIR/${RPI_TARGET}-${KAS_FILE}.rootfs.tar.gz"
+          echo "${PUB_DIR}/${RPI_TARGET}-${KAS_FILE}.rootfs.tar.gz" >> ${{ env.filepath }}
         else
           # For QCOM devices
           
