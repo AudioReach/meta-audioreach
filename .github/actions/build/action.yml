@@ -159,16 +159,19 @@ runs:
         
         # Handle different image types
         if [ "$MACHINE" = "raspberrypi4" ]; then
-          # For Raspberry Pi: <image>-<machine>.rootfs.tar.bz2 (meta-raspberrypi default IMAGE_FSTYPES)
+          # For Raspberry Pi: flashable SD card image (<image>-<machine>.rootfs.wic.bz2)
+          # plus its block map, both from meta-raspberrypi default IMAGE_FSTYPES
           RPI_TARGET=$(echo "${{ inputs.build_command }}" | awk '{print $2}')
-          RPI_TAR="${RPI_TARGET}-${MACHINE}.rootfs.tar.bz2"
-          if [ ! -f "$RPI_TAR" ]; then
-            echo "::error::$RPI_TAR not found in $(pwd)"
-            ls -la
-            exit 1
-          fi
-          cp -L "$RPI_TAR" "$PUB_DIR/${RPI_TARGET}-${KAS_FILE}.rootfs.tar.bz2"
-          echo "${PUB_DIR}/${RPI_TARGET}-${KAS_FILE}.rootfs.tar.bz2" >> ${{ env.filepath }}
+          for ext in wic.bz2 wic.bmap; do
+            RPI_IMG="${RPI_TARGET}-${MACHINE}.rootfs.${ext}"
+            if [ ! -f "$RPI_IMG" ]; then
+              echo "::error::$RPI_IMG not found in $(pwd)"
+              ls -la
+              exit 1
+            fi
+            cp -L "$RPI_IMG" "$PUB_DIR/${RPI_TARGET}-${KAS_FILE}.rootfs.${ext}"
+            echo "${PUB_DIR}/${RPI_TARGET}-${KAS_FILE}.rootfs.${ext}" >> ${{ env.filepath }}
+          done
         else
           # For QCOM devices
           
