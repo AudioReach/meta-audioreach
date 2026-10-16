@@ -47,6 +47,7 @@ repos:
 local_conf_header:
   are_support: |
     PACKAGECONFIG:pn-audioreach-graphmgr = "are_on_apps use_default_acdb_path"
+    PACKAGECONFIG:pn-audioreach-graphmgr = "are_on_apps use_default_acdb_path ipc_dbus"
     PACKAGECONFIG:pn-audioreach-graphservices = "are_on_apps"
     IMAGE_INSTALL:append = "audioreach-graphservices tinyalsa audioreach-graphmgr audioreach-engine audioreach-conf"
   extra: |
