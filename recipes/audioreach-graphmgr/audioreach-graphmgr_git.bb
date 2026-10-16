@@ -10,6 +10,7 @@ SRC_URI     += "file://agm_server.service"
 SRC_URI     += "file://agm-dbus.conf"
 
 DEPENDS = "glib-2.0 tinyalsa audioreach-graphservices audioreach-conf"
+DEPENDS:append:qcom = " tinycompress"
 
 # Add dbus to DEPENDS only if --with-no-ipc is NOT in EXTRA_OECONF
 DEPENDS:append = "${@bb.utils.contains('EXTRA_OECONF', '--with-no-ipc', '', ' dbus', d)}"
@@ -24,7 +25,7 @@ SOLIBS = ".so*"
 FILES_SOLIBSDEV = ""
 INSANE_SKIP:${PN} += "dev-so"
 
-FILES:${PN} += "${libdir}/alsa-lib/*"
+FILES:${PN} += "${libdir}/alsa-lib/* ${libdir}/tinycompress-lib/*"
 
 do_install:append () {
     if ${@bb.utils.contains('EXTRA_OECONF', '--with-no-ipc', 'false', 'true', d)}; then
@@ -38,7 +39,8 @@ do_install:append () {
 SYSTEMD_SERVICE:${PN} = "${@bb.utils.contains('EXTRA_OECONF', '--with-no-ipc', '', 'agm_server.service', d)}"
 RM_WORK_EXCLUDE += "${PN}"
 
-PACKAGECONFIG[are_on_apps] = "--with-are-on-apps, --without-are-on-apps, audioreach-engine"
-PACKAGECONFIG[use_default_acdb_path] = "--with-use-default-acdb-path, --without-use-default-acdb-path"
+PACKAGECONFIG[are_on_apps]              = "--with-are-on-apps, --without-are-on-apps, audioreach-engine"
+PACKAGECONFIG[use_default_acdb_path]    = "--with-use-default-acdb-path, --without-use-default-acdb-path"
+PACKAGECONFIG[ipc_dbus]                 = "--with-ipc_dbus, --without-ipc_dbus, dbus"
 
 inherit autotools pkgconfig
