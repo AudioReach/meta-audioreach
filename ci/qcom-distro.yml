@@ -31,6 +31,10 @@ repos:
   meta-selinux:
     branch: master
     url: https://git.yoctoproject.org/meta-selinux
+    patches:
+      layer-compat-blacksail:
+        repo: meta-qcom-distro
+        path: patches/selinux/0004-layer.conf-update-to-blacksail-release-series.patch
 
   meta-updater:
     branch: master
