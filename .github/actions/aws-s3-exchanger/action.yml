@@ -18,9 +18,9 @@ inputs:
     required: true
     default: single-upload
   upload_location:
-    description: Upload location
+    description: Upload location. The branch name is part of the path (<workflow>/<branch>/) so artifacts from different branches stay separate
     required: false
-    default: ${{ github.repository_owner }}/${{ github.event.repository.name }}/${{ github.workflow }}/${{ github.run_id }}-${{ github.run_attempt }}/
+    default: ${{ github.repository_owner }}/${{ github.event.repository.name }}/${{ github.workflow }}/${{ github.base_ref || github.ref_name }}/${{ github.run_id }}-${{ github.run_attempt }}/
 
 outputs:
   presigned_url:
