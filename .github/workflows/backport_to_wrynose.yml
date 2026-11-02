@@ -1,0 +1,84 @@
+---
+name: backport_to_wrynose
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: 'Commit on master to backport (default: HEAD of master)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  TARGET_BRANCH: wrynose
+
+jobs:
+  backport:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Determine commits to backport
+        id: range
+        run: |
+          if [ -n "${{ inputs.sha }}" ]; then
+            commits=$(git rev-list --reverse --no-merges -n1 "${{ inputs.sha }}")
+          else
+            before="${{ github.event.before }}"
+            # New branch push has an all-zero 'before'
+            if [ "${before//0/}" = "" ]; then before="${{ github.sha }}^"; fi
+            commits=$(git rev-list --reverse --no-merges "$before..${{ github.sha }}")
+          fi
+          echo "Commits:"; echo "$commits"
+          echo "commits<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$commits" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Cherry-pick onto ${{ env.TARGET_BRANCH }}
+        id: pick
+        if: steps.range.outputs.commits != ''
+        run: |
+          set -e
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          short=$(git rev-parse --short "${{ github.sha }}")
+          branch="backport/${TARGET_BRANCH}/${short}"
+          git checkout -b "$branch" "origin/${TARGET_BRANCH}"
+          for c in ${{ steps.range.outputs.commits }}; do
+            if ! git cherry-pick -x "$c"; then
+              if [ -z "$(git diff --name-only --diff-filter=U)" ]; then
+                git cherry-pick --skip   # empty / already applied
+              else
+                echo "::error::Conflict cherry-picking $c onto ${TARGET_BRANCH}; backport manually"
+                git cherry-pick --abort
+                exit 1
+              fi
+            fi
+          done
+          if [ "$(git rev-parse HEAD)" = "$(git rev-parse origin/${TARGET_BRANCH})" ]; then
+            echo "Nothing to backport"; echo "changed=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          git push origin "$branch"
+          echo "changed=true"   >> "$GITHUB_OUTPUT"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+
+      - name: Open pull request
+        if: steps.pick.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create \
+            --base "${TARGET_BRANCH}" \
+            --head "${{ steps.pick.outputs.branch }}" \
+            --title "Backport to ${TARGET_BRANCH}: $(git log -1 --format=%s ${{ github.sha }})" \
+            --body "Automated backport of ${{ github.sha }} from \`master\` to \`${TARGET_BRANCH}\` (cherry-picked with \`-x\`)."
