@@ -5,7 +5,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=ef516c5438f1b599326a5e207572f477"
 
 SRCREV = "ad9168e474c8c101ba20d1fdeb6e656b66f2feb0"
 PV = "0.0+git"
-SRC_URI = "git://git@github.com/Audioreach/audioreach-graphservices.git;protocol=https;branch=master"
+SRC_URI = "git://github.com/AudioReach/audioreach-graphservices.git;protocol=https;branch=master"
 
 DEPENDS = "glib-2.0"
 DEPENDS:append:qcom = " libdiag"
