@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - ci   # TEMP: for testing, remove before merging to master
   workflow_dispatch:
     inputs:
       sha:
@@ -25,7 +26,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: master
           fetch-depth: 0
 
       - name: Determine commits to backport
