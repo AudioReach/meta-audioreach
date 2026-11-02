@@ -4,7 +4,7 @@ HOMEPAGE = "https://github.com/AudioReach/audioreach-kernel"
 LICENSE = "GPL-2.0-only"
 LIC_FILES_CHKSUM = "file://LICENSE;md5=d683615f65309f6c050cbd1bb2b3c575"
 
-SRCREV = "fcf87b7d27d3fcf8b6951c493973f41931617c56"
+SRCREV = "91a6276252a3d72e9b64f4cf5922a82648d5af31"
 PV = "0.0+git"
 SRC_URI = "git://github.com/AudioReach/audioreach-kernel.git;protocol=https;branch=master"
 
