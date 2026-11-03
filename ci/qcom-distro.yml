@@ -12,10 +12,6 @@ repos:
 
   meta-openembedded:
     url: https://github.com/openembedded/meta-openembedded
-    patches:
-      pahole-objcopy-words:
-        repo: meta-qcom
-        path: patches/meta-oe/0001-pahole-fix-kernel-BTF-generation-when-OBJCOPY-carrie.patch
     layers:
       meta-filesystems:
       meta-gnome:
@@ -26,27 +22,23 @@ repos:
       meta-xfce:
   meta-ai:
       url: https://github.com/qualcomm-linux/meta-ai
-      branch: main
+      branch: wrynose
 
   meta-virtualization:
     url: https://git.yoctoproject.org/meta-virtualization
-    branch: master
+    branch: wrynose
 
   meta-selinux:
-    branch: master
+    branch: wrynose
     url: https://git.yoctoproject.org/meta-selinux
-    patches:
-      layer-compat-blacksail:
-        repo: meta-qcom-distro
-        path: patches/selinux/0004-layer.conf-update-to-blacksail-release-series.patch
 
   meta-updater:
-    branch: master
+    branch: wrynose
     url: https://github.com/uptane/meta-updater
 
   meta-security:
     url: https://git.yoctoproject.org/meta-security
-    branch: master
+    branch: wrynose
     layers:
       .:
       meta-tpm:
