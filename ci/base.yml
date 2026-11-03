@@ -10,7 +10,7 @@ distro: nodistro
 
 defaults:
   repos:
-    branch: master
+    branch: wrynose
 
 repos:
   oe-core:
