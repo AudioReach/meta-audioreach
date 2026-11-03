@@ -8,7 +8,7 @@ distro: qcom-distro
 repos:
   meta-qcom-distro:
     url: https://github.com/qualcomm-linux/meta-qcom-distro
-    branch: main
+    branch: wrynose
 
   meta-openembedded:
     url: https://github.com/openembedded/meta-openembedded
