@@ -10,7 +10,7 @@ SRC_URI = "git://github.com/AudioReach/audioreach-pipewire-plugin.git;protocol=h
 
 inherit autotools pkgconfig
 
-DEPENDS = "audioreach-graphmgr pipewire audioreach-pal audioreach-pal-headers"
+DEPENDS = "audioreach-graphmgr pipewire audioreach-pal audioreach-pal-headers audioreach-graphservices"
 
 FILES:${PN} += "${libdir}/pipewire-0.3/*.so"
 FILES:${PN} += "${datadir}/pipewire/pipewire.conf.d/pw-pal-plugin.conf"
