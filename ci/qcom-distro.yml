@@ -8,7 +8,7 @@ distro: qcom-distro
 repos:
   meta-qcom-distro:
     url: https://github.com/qualcomm-linux/meta-qcom-distro
-    branch: main
+    branch: wrynose
 
   meta-openembedded:
     url: https://github.com/openembedded/meta-openembedded
@@ -22,23 +22,23 @@ repos:
       meta-xfce:
   meta-ai:
       url: https://github.com/qualcomm-linux/meta-ai
-      branch: main
+      branch: wrynose
 
   meta-virtualization:
     url: https://git.yoctoproject.org/meta-virtualization
-    branch: master
+    branch: wrynose
 
   meta-selinux:
-    branch: master
+    branch: wrynose
     url: https://git.yoctoproject.org/meta-selinux
 
   meta-updater:
-    branch: master
+    branch: wrynose
     url: https://github.com/uptane/meta-updater
 
   meta-security:
     url: https://git.yoctoproject.org/meta-security
-    branch: master
+    branch: wrynose
     layers:
       .:
       meta-tpm:

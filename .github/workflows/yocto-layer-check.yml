@@ -33,7 +33,7 @@ jobs:
           import urllib.request
           import yaml
 
-          lock_url = "https://raw.githubusercontent.com/qualcomm-linux/meta-qcom/master/ci/base.lock.yml"
+          lock_url = "https://raw.githubusercontent.com/qualcomm-linux/meta-qcom/wrynose/ci/base.lock.yml"
           with urllib.request.urlopen(lock_url) as f:
               lock = yaml.safe_load(f.read().decode("utf-8"))
 
