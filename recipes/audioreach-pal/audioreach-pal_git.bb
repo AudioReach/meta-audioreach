@@ -7,7 +7,7 @@ LIC_FILES_CHKSUM = "file://LICENSE;md5=51110a366f598bc0b8f8e59141a18efb"
 SRCPROJECT = "git://github.com/AudioReach/audioreach-pal.git"
 SRCBRANCH  = "master"
 
-SRCREV = "fa3105cfbcf86d5064b2bf1ab429fa419b2ba5a5"
+SRCREV = "c2366eb32797834d5b3f9aebbe2763a83fc2ff5e"
 PV = "0.0+git"
 SRC_URI  = "${SRCPROJECT};protocol=https;branch=${SRCBRANCH}"
 
