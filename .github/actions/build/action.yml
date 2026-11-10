@@ -42,7 +42,7 @@ inputs:
     required: false
     default: "-j 4"
   sstate_cache_dir:
-    description: "Base directory for SSTATE_DIR and DL_DIR caches (default: /efs/qli/meta-audioreach)"
+    description: "Base directory for SSTATE_DIR and DL_DIR caches; a per-branch subdirectory is created under it (default: /efs/qli/meta-audioreach)"
     required: false
     default: ""
 
@@ -68,6 +68,7 @@ runs:
       shell: bash
       env:
         CACHE_BASE: ${{ inputs.sstate_cache_dir }}
+        CACHE_BRANCH: ${{ github.base_ref || github.ref_name }}
       run: |
         #!/bin/bash
         set -euo pipefail
@@ -83,7 +84,10 @@ runs:
             *[!A-Za-z0-9/._-]*)
               echo "::error::sstate_cache_dir may only contain [A-Za-z0-9/._-]"; exit 1 ;;
           esac
-          base="${CACHE_BASE%/}"
+          # Keep a separate cache per branch so a corrupt or stale cache on
+          # one branch cannot break builds on the others
+          branch="$(printf '%s' "${CACHE_BRANCH}" | tr -c 'A-Za-z0-9._-' '_')"
+          base="${CACHE_BASE%/}/${branch:-default}"
           sstate_dir="${base}/sstate-cache"
           dl_dir="${base}/downloads"
           mkdir -p "${sstate_dir}" "${dl_dir}"
