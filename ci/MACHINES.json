@@ -3,7 +3,7 @@
     "file_name": "meta-audioreach/ci/iq-8275-evk.yml",
     "machine_name": "8275-evk",
     "image_name": "iq-8275-evk",
-    "testing_enabled": false,
+    "testing_enabled": true,
     "build_commands": {
       "flat_build": "bitbake qcom-multimedia-proprietary-image",
       "sdk_build": "bitbake qcom-multimedia-proprietary-image && bitbake qcom-multimedia-proprietary-image -c populate_sdk"
@@ -13,7 +13,7 @@
     "file_name": "meta-audioreach/ci/iq-9075-evk.yml",
     "machine_name": "9075-evk",
     "image_name": "iq-9075-evk",
-    "testing_enabled": false,
+    "testing_enabled": true,
     "build_commands": {
       "flat_build": "bitbake qcom-multimedia-proprietary-image",
       "sdk_build": "bitbake qcom-multimedia-proprietary-image && bitbake qcom-multimedia-proprietary-image -c populate_sdk"
