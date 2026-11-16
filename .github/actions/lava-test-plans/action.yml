@@ -182,10 +182,10 @@ runs:
         # Some devices are named iq-<machine> in lava-test-plans (iq-8275-evk)
         DEVICES_DIR="lava-test-plans/lava_test_plans/projects/${PROJECT}/devices"
         DEVICE_NAME="${MACHINE_NAME}"
-        if [ ! -d "${DEVICES_DIR}/${DEVICE_NAME}" ] && [ -d "${DEVICES_DIR}/iq-${DEVICE_NAME}" ]; then
+        if [ ! -f "${DEVICES_DIR}/${DEVICE_NAME}" ] && [ -f "${DEVICES_DIR}/iq-${DEVICE_NAME}" ]; then
           DEVICE_NAME="iq-${DEVICE_NAME}"
         fi
-        if [ ! -d "${DEVICES_DIR}/${DEVICE_NAME}" ]; then
+        if [ ! -f "${DEVICES_DIR}/${DEVICE_NAME}" ]; then
           echo "ERROR: No lava-test-plans device found for ${MACHINE_NAME} in ${DEVICES_DIR}" >&2
           exit 1
         fi
