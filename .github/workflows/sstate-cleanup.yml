@@ -2,6 +2,17 @@ name: Sstate cache cleanup
 
 on:
   workflow_dispatch:
+    inputs:
+      branch:
+        description: Only act on this branch's cache directory (empty means all branches)
+        required: false
+        default: ''
+        type: string
+      purge_invalid_git2:
+        description: Remove git2 mirrors that are not valid git repositories, instead of expiring old files
+        required: false
+        default: false
+        type: boolean
   schedule:
     # Weekly on Saturday at 10:22 UTC
     - cron: "22 10 * * 6"
@@ -20,6 +31,9 @@ jobs:
     steps:
       - name: Expire unused files from the shared sstate-cache dir
         shell: bash
+        env:
+          INPUT_BRANCH: ${{ inputs.branch }}
+          INPUT_PURGE_INVALID_GIT2: ${{ inputs.purge_invalid_git2 }}
         run: |
           set -euo pipefail
           CACHE_BASE="${SSTATE_CACHE_DIR}"
@@ -27,8 +41,49 @@ jobs:
             echo "::error::SSTATE_CACHE_DIR is empty; refusing to run cleanup"
             exit 1
           fi
+
           # Each branch has its own <base>/<branch>/{sstate-cache,downloads}
-          for BRANCH_DIR in "${CACHE_BASE%/}"/*/; do
+          BRANCH_DIRS=("${CACHE_BASE%/}"/*/)
+          if [ -n "${INPUT_BRANCH}" ]; then
+            branch="$(printf '%s' "${INPUT_BRANCH}" | tr -c 'A-Za-z0-9._-' '_')"
+            BRANCH_DIRS=("${CACHE_BASE%/}/${branch}/")
+            if [ ! -d "${BRANCH_DIRS[0]}" ]; then
+              echo "::error::No cache directory for branch ${branch}: ${BRANCH_DIRS[0]}"
+              exit 1
+            fi
+          fi
+
+          if [ "${INPUT_PURGE_INVALID_GIT2}" = "true" ]; then
+            # A git2 mirror that is empty or half cloned makes every fetch of
+            # that recipe fail with "not a git repository". Remove those so the
+            # next build clones them again. Skip anything touched in the last
+            # 30 minutes, which may be a clone in progress.
+            for BRANCH_DIR in "${BRANCH_DIRS[@]}"; do
+              GIT2_DIR="${BRANCH_DIR}downloads/git2"
+              [ -d "${GIT2_DIR}" ] || continue
+              echo "Checking git2 mirrors in ${GIT2_DIR}"
+              removed=0
+              for MIRROR in "${GIT2_DIR}"/*/; do
+                [ -d "${MIRROR}" ] || continue
+                if [ -n "$(find "${MIRROR}" -maxdepth 0 -mmin -30)" ]; then
+                  echo "Skipping recently modified ${MIRROR}"
+                  continue
+                fi
+                if [ -f "${MIRROR}HEAD" ] && [ -d "${MIRROR}objects" ] && \
+                   git -c safe.directory='*' -c safe.bareRepository=all -C "${MIRROR}" rev-parse --git-dir >/dev/null 2>&1; then
+                  continue
+                fi
+                echo "Removing invalid git2 mirror ${MIRROR}"
+                rm -rf -- "${MIRROR}" "${MIRROR%/}.lock"
+                removed=$((removed + 1))
+              done
+              echo "Removed ${removed} invalid git2 mirror(s) from ${GIT2_DIR}"
+            done
+            echo "Cleanup complete."
+            exit 0
+          fi
+
+          for BRANCH_DIR in "${BRANCH_DIRS[@]}"; do
             SSTATE_DIR="${BRANCH_DIR}sstate-cache"
             DL_DIR="${BRANCH_DIR}downloads"
             if [ -d "${SSTATE_DIR}" ]; then
