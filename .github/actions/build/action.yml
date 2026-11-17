@@ -163,12 +163,17 @@ runs:
         
         # Handle different image types
         if [ "$MACHINE" = "raspberrypi4" ]; then
-          # For Raspberry Pi
-          if [ -f "${IMAGE_NAME}-${MACHINE}.tar.bz2" ]; then
-            cp "${IMAGE_NAME}-${MACHINE}.tar.bz2" "$PUB_DIR/${IMAGE_NAME}-${KAS_FILE}.tar.bz2"
-            echo "${PUB_DIR}/${IMAGE_NAME}-${KAS_FILE}.tar.bz2" >> ${{ env.filepath }}
-          
-          fi
+          # For Raspberry Pi, publish the wic image and its bmap file
+          for ext in wic.bz2 wic.bmap; do
+            src="core-image-sato-${IMAGE_NAME}.rootfs.${ext}"
+            if [ ! -e "$src" ]; then
+              echo "Error: ${src} not found in $(pwd)"
+              ls -la
+              exit 1
+            fi
+            cp -L "$src" "$PUB_DIR/core-image-sato-${KAS_FILE}.rootfs.${ext}"
+            echo "${PUB_DIR}/core-image-sato-${KAS_FILE}.rootfs.${ext}" >> ${{ env.filepath }}
+          done
         else
           # For QCOM devices
           
