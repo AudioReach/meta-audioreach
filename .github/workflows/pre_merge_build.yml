@@ -17,6 +17,19 @@ on:
       - '.github/**'
 
 jobs:
+  # The test results are published from a workflow_run workflow, which has to
+  # read the number of the pull request from the event that triggered this one
+  upload_event_file:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Upload event file
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: Event File
+          path: ${{ github.event_path }}
+
   load_parameters:
     uses: ./.github/workflows/loading.yml
 

@@ -52,6 +52,10 @@ on:
         required: false
         type: boolean
         default: true
+    outputs:
+      summary_id:
+        description: ID of the test summary artifact
+        value: ${{ jobs.publish-test-summary.outputs.summary_id }}
     secrets:
       LAVATOKEN:
         required: true
@@ -200,6 +204,8 @@ jobs:
 
           echo "## LAVA Test Job Summaries" >> "$GITHUB_STEP_SUMMARY"
           for f in "${files[@]}"; do
+            # the totals for the pull request comment, not for the step summary
+            [[ "$f" == *-short.md ]] && continue
             echo "" >> "$GITHUB_STEP_SUMMARY"
             echo "### $(basename "$f")" >> "$GITHUB_STEP_SUMMARY"
             cat "$f" >> "$GITHUB_STEP_SUMMARY"
