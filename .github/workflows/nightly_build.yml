@@ -1,0 +1,33 @@
+name: nightly_build
+on:
+  schedule:
+    # 18:30 UTC, which is midnight IST
+    - cron: "30 18 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly_build
+  cancel-in-progress: false
+
+jobs:
+  load_parameters:
+    uses: ./.github/workflows/loading.yml
+
+  flat_build:
+    needs: load_parameters
+    uses: ./.github/workflows/build.yml
+    with:
+      build_matrix: ${{ needs.load_parameters.outputs.build_matrix }}
+      build_type: flat_build
+      sstate_cache_dir: /efs/qli/meta-audioreach
+
+  sdk_build:
+    needs: [load_parameters, flat_build]
+    uses: ./.github/workflows/build.yml
+    with:
+      build_matrix: ${{ needs.load_parameters.outputs.build_matrix }}
+      build_type: sdk_build
+      sstate_cache_dir: /efs/qli/meta-audioreach
