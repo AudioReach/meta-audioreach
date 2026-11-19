@@ -155,3 +155,53 @@ jobs:
       build_matrix: ${{ needs.prepare_matrix.outputs.test_matrix }}
       build_urls: ${{ needs.prepare_matrix.outputs.build_urls }}
       testplan: ${{ github.event.workflow_run.name == 'post_merge_build' && 'post-merge' || 'pre-merge' }}
+
+  comment_on_pr:
+    name: Comment on PR
+    needs: trigger_lava
+    if: >-
+      always()
+      && github.event.workflow_run.name == 'pre_merge_build'
+      && needs.trigger_lava.outputs.summary_id != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
+    steps:
+      - name: Download result summary
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          artifact-ids: ${{ needs.trigger_lava.outputs.summary_id }}
+          path: results_summary
+
+      - name: Download event file
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          name: Event File
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: event_file
+
+      - name: Prepare PR comment
+        id: pr_comment_prep
+        env:
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          {
+            echo "## Test run [workflow](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})"
+            echo "## Test jobs for commit ${HEAD_SHA}"
+            find ./results_summary/ -type f -name '*-short.md' | sort | xargs -r cat
+          } > pr-comment.txt
+          PR_NUMBER=$(jq -r '.number // .pull_request.number // ""' event_file/event.json)
+          echo "pr_number=${PR_NUMBER}" >> "$GITHUB_OUTPUT"
+
+      - name: Comment on PR
+        if: steps.pr_comment_prep.outputs.pr_number != ''
+        uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # v3.0.5
+        with:
+          path: pr-comment.txt
+          number_force: ${{ steps.pr_comment_prep.outputs.pr_number }}
+          header: test-results
+          hide_and_recreate: true
+          hide_classify: OUTDATED
