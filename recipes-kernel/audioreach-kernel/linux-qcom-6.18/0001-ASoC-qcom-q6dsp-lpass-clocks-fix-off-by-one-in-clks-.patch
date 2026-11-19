@@ -1,0 +1,76 @@
+From 69397e97354aa99d564281fd70d08d2308d6247d Mon Sep 17 00:00:00 2001
+From: Ajay Kumar Nandam <ajay.nandam@oss.qualcomm.com>
+Date: Thu, 19 Nov 2026 16:23:13 +0530
+Subject: [PATCH] ASoC: qcom: q6dsp-lpass-clocks: fix off-by-one in clks[]
+ array bound
+
+q6dsp_clock_dev_probe() stores each registered clk_hw directly by its
+caller-supplied numeric clk_id:
+
+	cc->clks[id] = clk;
+
+with no further bounds enforcement at registration time (the
+Q6DSP_MAX_CLK_ID check only runs later, in q6dsp_of_clk_hw_get(), for
+DT consumer lookups). struct q6dsp_cc lays clks[Q6DSP_MAX_CLK_ID]
+immediately before desc:
+
+	struct q6dsp_cc {
+		struct device *dev;
+		struct q6dsp_clk *clks[Q6DSP_MAX_CLK_ID];
+		const struct q6dsp_clk_desc *desc;
+	};
+
+out-of-tree audioreach-kernel's q6prm clock table now registers a vote
+clock with clk_id LPASS_HW_LPR_VOTE == 104, matching the historical
+Q6DSP_MAX_CLK_ID of 104. Since valid array indices only run 0..103,
+writing cc->clks[104] overflows by one element and lands exactly on
+the adjacent desc field, clobbering the q6dsp_clk_desc pointer that
+holds the lpass_set_clk/lpass_vote_clk/lpass_unvote_clk callbacks with
+a stray struct q6dsp_clk * instead.
+
+The corruption is silent until the next clk_prepare()/clk_unprepare()
+call on any clock from this provider dereferences the now-bogus
+cc->desc and jumps through a garbage function pointer, e.g.:
+
+  Unable to handle kernel execute from non-executable memory
+  ...
+  lr : clk_vote_q6dsp_block+0x4c/0x68 [snd_q6dsp_common]
+  Call trace:
+   clk_core_prepare
+   clk_prepare
+   pm_clk_resume
+   lpi_pinctrl_runtime_resume
+   ...
+   lpi_pinctrl_probe
+
+This reliably hangs boot on every board that shares the q6prm clock
+table (not just the board the new vote clock was added for), since
+the table is registered unconditionally regardless of which board
+actually uses the new entry.
+
+Bump Q6DSP_MAX_CLK_ID to 105 so index 104 is in bounds again.
+
+Fixes: out-of-tree audioreach-kernel use of LPASS_HW_LPR_VOTE (clk_id 104)
+Signed-off-by: Ajay Kumar Nandam <ajay.nandam@oss.qualcomm.com>
+Upstream-Status: Pending
+
+---
+ sound/soc/qcom/qdsp6/q6dsp-lpass-clocks.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/sound/soc/qcom/qdsp6/q6dsp-lpass-clocks.c b/sound/soc/qcom/qdsp6/q6dsp-lpass-clocks.c
+index 03838582aead..ab7d20580638 100644
+--- a/sound/soc/qcom/qdsp6/q6dsp-lpass-clocks.c
++++ b/sound/soc/qcom/qdsp6/q6dsp-lpass-clocks.c
+@@ -12,7 +12,7 @@
+ #include <dt-bindings/sound/qcom,q6dsp-lpass-ports.h>
+ #include "q6dsp-lpass-clocks.h"
+ 
+-#define Q6DSP_MAX_CLK_ID			104
++#define Q6DSP_MAX_CLK_ID			105
+ #define Q6DSP_LPASS_CLK_ROOT_DEFAULT		0
+ 
+ 
+-- 
+2.34.1
+
