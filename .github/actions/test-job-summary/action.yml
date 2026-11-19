@@ -227,6 +227,30 @@ runs:
               for line in lines:
                   print(line)
               
+              # The totals are also saved on their own, for the test results
+              # comment on the pull request
+              short = []
+              short.append("### LAVA test results")
+              short.append("")
+              short.append("| Device | Pass | Fail | Total |")
+              short.append("| ---- | ---- | ---- | ---- |")
+              total_pass = total_fail = total_all = 0
+              for job_file, job_info in sorted(job_results, key=lambda j: str(j[1]['device_type'])):
+                  results = [t.get('result') for t in job_info['test_results'].values()]
+                  n_pass = results.count('pass')
+                  n_fail = results.count('fail')
+                  total_pass += n_pass
+                  total_fail += n_fail
+                  total_all += len(results)
+                  job_url = f"https://lava.infra.foundries.io/results/{job_info['job_id']}"
+                  short.append(f"| [{job_info['device_type']}]({job_url}) | {n_pass} | {n_fail} | {len(results)} |")
+              short.append("")
+              short.append(f"Pass: {total_pass} | Fail: {total_fail} | Total: {total_all}")
+              short.append("")
+              short_file = summary_file + "-short.md"
+              with open(short_file, 'w') as f:
+                  f.write('\n'.join(short) + '\n')
+
               # Write to file
               with open(summary_file, 'w') as f:
                   for line in lines:
@@ -307,5 +331,7 @@ runs:
         id: upload-summary
         uses: actions/upload-artifact@v6
         with:
-          path: ${{ inputs.summary_file_name }}
+          path: |
+            ${{ inputs.summary_file_name }}
+            ${{ inputs.summary_file_name }}-short.md
           name: ${{ inputs.summary_file_name }}
