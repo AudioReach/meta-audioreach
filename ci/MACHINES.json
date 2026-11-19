@@ -88,15 +88,5 @@
       "flat_build": "bitbake qcom-multimedia-proprietary-image",
       "sdk_build": "bitbake qcom-multimedia-proprietary-image && bitbake qcom-multimedia-proprietary-image -c populate_sdk"
     }
-  },
-  "nord-rrd": {
-    "file_name": "meta-audioreach/ci/nord-rrd.yml",
-    "machine_name": "nord-rrd",
-    "image_name": "nord-rrd",
-    "testing_enabled": false,
-    "build_commands": {
-      "flat_build": "bitbake qcom-multimedia-proprietary-image",
-      "sdk_build": "bitbake qcom-multimedia-proprietary-image && bitbake qcom-multimedia-proprietary-image -c populate_sdk"
-    }
   }
 }
