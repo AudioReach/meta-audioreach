@@ -1,0 +1,53 @@
+name: tmp_comment_test
+
+on:
+  pull_request:
+    branches:
+      - ci
+
+permissions:
+  contents: read
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      # Same summary code as the LAVA test job summary, on finished LAVA jobs
+      - name: Build the short summary
+        env:
+          WORKSPACE: ${{ github.workspace }}/lava
+          PREFIX: test-job
+        run: |
+          mkdir -p lava results_summary
+          for j in 575714 575715 575716; do echo "{\"id\": $j}" > lava/test-job-$j.json; done
+          python3 - <<'PY'
+          import re, textwrap
+          t = open('.github/actions/test-job-summary/action.yml').read()
+          m = re.search(r"python3 << 'EOF'\n(.*?)\n\s*EOF\n", t, re.S)
+          open('run.py', 'w').write(textwrap.dedent(m.group(1)))
+          PY
+          SUMMARY_FILE="${GITHUB_WORKSPACE}/results_summary/step-summary.txt" python3 run.py
+
+      - name: Prepare PR comment
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          {
+            echo "## Test run [workflow](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})"
+            echo "## Test jobs for commit ${HEAD_SHA}"
+            find ./results_summary/ -type f -name '*-short.md' | sort | xargs -r cat
+          } > pr-comment.txt
+          cat pr-comment.txt
+
+      - name: Comment on PR
+        uses: marocchino/sticky-pull-request-comment@5770ad5eb8f42dd2c4f34da00c94c5381e49af88 # v3.0.5
+        with:
+          path: pr-comment.txt
+          header: test-results
+          hide_and_recreate: true
+          hide_classify: OUTDATED
