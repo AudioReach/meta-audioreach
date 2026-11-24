@@ -1,39 +1,29 @@
 {
-  "8275-evk": {
-    "file_name": "meta-audioreach/ci/iq-8275-evk.yml",
-    "machine_name": "8275-evk",
-    "image_name": "iq-8275-evk",
-    "testing_enabled": true,
+  "shikra-evk": {
+    "file_name": "meta-audioreach/ci/shikra-evk.yml",
+    "machine_name": "shikra-evk",
+    "image_name": "shikra-evk",
+    "testing_enabled": false,
     "build_commands": {
       "flat_build": "bitbake qcom-multimedia-proprietary-image",
       "sdk_build": "bitbake qcom-multimedia-proprietary-image && bitbake qcom-multimedia-proprietary-image -c populate_sdk"
     }
   },
-  "9075-evk": {
-    "file_name": "meta-audioreach/ci/iq-9075-evk.yml",
-    "machine_name": "9075-evk",
-    "image_name": "iq-9075-evk",
-    "testing_enabled": true,
+  "nord-rrd": {
+    "file_name": "meta-audioreach/ci/nord-rrd.yml",
+    "machine_name": "nord-rrd",
+    "image_name": "nord-rrd",
+    "testing_enabled": false,
     "build_commands": {
       "flat_build": "bitbake qcom-multimedia-proprietary-image",
       "sdk_build": "bitbake qcom-multimedia-proprietary-image && bitbake qcom-multimedia-proprietary-image -c populate_sdk"
     }
   },
-  "rb3gen2-core-kit": {
-    "file_name": "meta-audioreach/ci/rb3gen2-core-kit.yml",
-    "machine_name": "rb3gen2-core-kit",
-    "image_name": "rb3gen2-core-kit",
-    "testing_enabled": true,
-    "build_commands": {
-      "flat_build": "bitbake qcom-multimedia-proprietary-image",
-      "sdk_build": "bitbake qcom-multimedia-proprietary-image && bitbake qcom-multimedia-proprietary-image -c populate_sdk"
-    }
-  },
-  "rb3gen2-core-kit-6.18": {
-    "file_name": "meta-audioreach/ci/rb3gen2-core-kit-6.18.yml",
-    "machine_name": "rb3gen2-core-kit",
-    "image_name": "rb3gen2-core-kit",
-    "testing_enabled": true,
+  "iq-615-evk": {
+    "file_name": "meta-audioreach/ci/iq-615-evk.yml",
+    "machine_name": "iq-615-evk",
+    "image_name": "iq-615-evk",
+    "testing_enabled": false,
     "build_commands": {
       "flat_build": "bitbake qcom-multimedia-proprietary-image",
       "sdk_build": "bitbake qcom-multimedia-proprietary-image && bitbake qcom-multimedia-proprietary-image -c populate_sdk"
