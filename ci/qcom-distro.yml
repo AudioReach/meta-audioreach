@@ -2,58 +2,13 @@
 
 header:
   version: 14
-
-distro: qcom-distro
+  includes:
+    - repo: meta-qcom
+      file: ci/qcom-distro.yml
 
 repos:
-  meta-qcom-distro:
-    url: https://github.com/qualcomm-linux/meta-qcom-distro
-    branch: main
-
-  meta-openembedded:
-    url: https://github.com/openembedded/meta-openembedded
-    patches:
-      pahole-objcopy-words:
-        repo: meta-qcom
-        path: patches/meta-oe/0001-pahole-fix-kernel-BTF-generation-when-OBJCOPY-carrie.patch
-    layers:
-      meta-filesystems:
-      meta-gnome:
-      meta-multimedia:
-      meta-networking:
-      meta-oe:
-      meta-python:
-      meta-xfce:
-  meta-ai:
-      url: https://github.com/qualcomm-linux/meta-ai
-      branch: main
-
-  meta-virtualization:
-    url: https://git.yoctoproject.org/meta-virtualization
-    branch: master
-
-  meta-selinux:
-    branch: master
-    url: https://git.yoctoproject.org/meta-selinux
-    patches:
-      layer-compat-blacksail:
-        repo: meta-qcom-distro
-        path: patches/selinux/0004-layer.conf-update-to-blacksail-release-series.patch
-
-  meta-updater:
-    branch: master
-    url: https://github.com/uptane/meta-updater
-
-  meta-security:
-    url: https://git.yoctoproject.org/meta-security
-    branch: master
-    layers:
-      .:
-      meta-tpm:
-
-local_conf_header:
-  virtualization:
-    SKIP_META_VIRT_SANITY_CHECK = "1"
+  meta-audioreach:
+    url:
 
 target:
   - qcom-multimedia-proprietary-image
