@@ -11,7 +11,7 @@ repos:
     branch: wrynose
   meta-qcom:
     url: https://github.com/qualcomm-linux/meta-qcom.git
-    commit: 5052818d3019f17a728cf6c67d81abaa0e153ded
+    commit: 6a7af3ed9e5931062ed8c44bfa76cb99cfdd560e
   meta-qcom-distro:
     url: https://github.com/qualcomm-linux/meta-qcom-distro.git
-    commit: 70eabc36e1a8347cbe332e9b52acabd39f4832e0
+    commit: 8b106c0d448551e42ebc9cb11229f2a20bfe2c89
