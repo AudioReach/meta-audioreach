@@ -11,7 +11,7 @@ repos:
     branch: master
   meta-qcom:
     url: https://github.com/qualcomm-linux/meta-qcom.git
-    commit: 8fc052802a4e00a4b535e7a1c61f02baa83bd3ab
+    commit: 75d32956694cdc3d265980a31d86e787f77b6b2b
   meta-qcom-distro:
     url: https://github.com/qualcomm-linux/meta-qcom-distro.git
-    commit: 10cb386677ebb4eef260e7b8417f0f6dc98cf1b9
+    commit: 9c3235b679743788dec6c0f8a104b7d2a7b9d08c
