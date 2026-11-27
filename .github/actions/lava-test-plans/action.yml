@@ -254,7 +254,7 @@ runs:
     # so it survives the crash) and asks LAVA directly for the job's real result.
     - name: Verify LAVA job result
       id: verify-job
-      if: ${{ always() && steps.generate-jobs.outputs.first_job != '' }}
+      if: ${{ !cancelled() && steps.generate-jobs.outputs.first_job != '' }}
       shell: bash
       env:
         SUBMIT_OUTCOME: ${{ steps.submit-job.outcome }}
@@ -343,6 +343,7 @@ runs:
         MACHINE_NAME: ${{ inputs.machine_name }}
         TESTPLAN: ${{ inputs.testplan }}
         OUTCOME: ${{ steps.verify-job.outcome }}
+        SUBMIT_OUTCOME: ${{ steps.submit-job.outcome }}
         FIRST_JOB: ${{ steps.generate-jobs.outputs.first_job }}
       run: |
         OUTCOME="${OUTCOME:-skipped}"
@@ -354,7 +355,9 @@ runs:
         echo "**Test Plan:** \`$TESTPLAN\`" >> "$GITHUB_STEP_SUMMARY"
         echo "" >> "$GITHUB_STEP_SUMMARY"
         
-        if [ "$OUTCOME" = "success" ]; then
+        if [ "$SUBMIT_OUTCOME" = "cancelled" ]; then
+          echo ":no_entry_sign: LAVA job submission was cancelled" >> "$GITHUB_STEP_SUMMARY"
+        elif [ "$OUTCOME" = "success" ]; then
           echo ":heavy_check_mark: LAVA job submitted successfully" >> "$GITHUB_STEP_SUMMARY"
         elif [ "$OUTCOME" = "skipped" ]; then
           echo ":warning: LAVA job submission was skipped (no jobs generated)" >> "$GITHUB_STEP_SUMMARY"

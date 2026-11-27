@@ -156,6 +156,38 @@ jobs:
           fail_action_on_failure: ${{ inputs.fail_on_test_failure }}
           run_id: ${{ github.run_id }}
           run_attempt: ${{ github.run_attempt }}
+
+      # The submit step stops waiting when the run is cancelled, for
+      # example by a newer commit of the PR, but the LAVA job keeps its
+      # place in the queue or its board. Cancel it.
+      - name: Cancel the LAVA job left behind
+        if: ${{ always() && steps.lava_submit.outcome != 'success' }}
+        timeout-minutes: 3
+        shell: bash
+        env:
+          LAVA_TOKEN: ${{ secrets.LAVATOKEN }}
+          LAVA_URL: ${{ inputs.lava_url }}
+        run: |
+          for DETAILS in "${GITHUB_WORKSPACE}"/test-job-*.json; do
+            [ -f "${DETAILS}" ] || continue
+            JOB_ID="${DETAILS##*/test-job-}"
+            JOB_ID="${JOB_ID%.json}"
+            case "${JOB_ID}" in ''|*[!0-9]*) continue ;; esac
+            JOB_API="https://${LAVA_URL}/api/v0.2/jobs/${JOB_ID}"
+            STATE=$(curl -sS --fail --retry 2 --max-time 30 \
+              -H "Authorization: Token ${LAVA_TOKEN}" "${JOB_API}/" |
+              python3 -c 'import json, sys; print(json.load(sys.stdin)["state"])')
+            case "${STATE}" in
+            Submitted|Scheduling|Scheduled|Running)
+              echo "Canceling ${STATE} job https://${LAVA_URL}/scheduler/job/${JOB_ID}"
+              curl -sS --fail-with-body --retry 2 --max-time 30 \
+                -H "Authorization: Token ${LAVA_TOKEN}" "${JOB_API}/cancel/"
+              ;;
+            *)
+              echo "Leaving ${STATE} job https://${LAVA_URL}/scheduler/job/${JOB_ID}"
+              ;;
+            esac
+          done
   
  publish-test-summary:
     name: "Publish Tests Summary"
