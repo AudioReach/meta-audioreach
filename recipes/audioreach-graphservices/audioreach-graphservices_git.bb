@@ -8,7 +8,7 @@ PV = "0.0+git"
 SRC_URI = "git://git@github.com/Audioreach/audioreach-graphservices.git;protocol=https;branch=master"
 
 DEPENDS = "glib-2.0"
-DEPENDS:append:qcom = " libdiag"
+DEPENDS:append:qcom = " diag"
 EXTRA_OECONF += "--with-syslog --with-glib --without-cutils"
 EXTRA_OECONF:append:qcom = " --with-qcom --without-ats_transport_tcp_ip \
                              --without-ats_data_logging --with-msm-audio-ion-disable \
