@@ -3,6 +3,7 @@
 header:
   version: 14
   includes:
+  - ci/ci.yml
   - ci/base.yml
   - ci/qcom-distro.yml
   
