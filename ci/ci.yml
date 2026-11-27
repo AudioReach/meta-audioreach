@@ -3,10 +3,6 @@
 header:
   version: 14
   includes:
-  - repo: meta-qcom
-    file: ci/ci.yml
-
-local_conf_header:
-  ccache: |
-    INHERIT:remove = "ccache"
-    ASSUME_PROVIDED:remove = "ccache-native"
+    - ci/meta-qcom.yml
+    - repo: meta-qcom
+      file: ci/ci.yml

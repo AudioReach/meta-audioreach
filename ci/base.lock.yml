@@ -9,9 +9,3 @@ header:
 repos:
   meta-audioreach:
     branch: master
-  meta-qcom:
-    url: https://github.com/qualcomm-linux/meta-qcom.git
-    branch: master
-  meta-qcom-distro:
-    url: https://github.com/qualcomm-linux/meta-qcom-distro.git
-    branch: master

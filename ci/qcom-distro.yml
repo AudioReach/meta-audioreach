@@ -6,9 +6,5 @@ header:
     - repo: meta-qcom
       file: ci/qcom-distro.yml
 
-repos:
-  meta-audioreach:
-    url:
-
 target:
   - qcom-multimedia-proprietary-image

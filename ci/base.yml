@@ -3,27 +3,12 @@
 header:
   version: 14
   includes:
-  - repo: meta-qcom
-    file: ci/base.yml
+    - repo: meta-qcom
+      file: ci/base.yml
 
 repos:
   meta-qcom:
-    url: https://github.com/qualcomm-linux/meta-qcom.git
+    url: https://github.com/qualcomm-linux/meta-qcom
     branch: master
 
-  meta-openembedded:
-    url: https://github.com/openembedded/meta-openembedded
-    layers:
-      meta-multimedia:
-      meta-oe:
-      meta-python:
-
   meta-audioreach:
-    path: meta-audioreach
-
-local_conf_header:
-  audioreach: |
-    IMAGE_INSTALL:append = " packagegroup-audioreach"
-  qcomflash: |
-    IMAGE_CLASSES += "image_types_qcom"
-    IMAGE_FSTYPES += "qcomflash"

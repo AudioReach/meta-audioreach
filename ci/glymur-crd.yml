@@ -3,8 +3,8 @@
 header:
   version: 14
   includes:
-  - ci/base.yml
   - ci/ci.yml
+  - ci/base.yml
   - ci/qcom-distro.yml
   
 machine: glymur-crd
