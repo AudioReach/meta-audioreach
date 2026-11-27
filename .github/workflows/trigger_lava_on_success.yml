@@ -148,6 +148,7 @@ jobs:
       contents: read
       checks: write
       pull-requests: write
+      statuses: write
     uses: Audioreach/meta-audioreach/.github/workflows/test.yml@master
     secrets:
       LAVATOKEN: ${{ secrets.LAVATOKEN }}
@@ -155,3 +156,4 @@ jobs:
       build_matrix: ${{ needs.prepare_matrix.outputs.test_matrix }}
       build_urls: ${{ needs.prepare_matrix.outputs.build_urls }}
       testplan: ${{ github.event.workflow_run.name == 'post_merge_build' && 'post-merge' || 'pre-merge' }}
+      report_sha: ${{ github.event.workflow_run.head_sha }}

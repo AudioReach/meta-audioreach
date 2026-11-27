@@ -52,10 +52,41 @@ on:
         required: false
         type: boolean
         default: true
+      report_sha:
+        description: >-
+          Commit to report the test result on as a commit status, usually the
+          PR head. The status is not reported when empty. The caller needs to
+          grant statuses write permission.
+        required: false
+        type: string
+        default: ""
+      status_context:
+        description: Context of the commit status
+        required: false
+        type: string
+        default: LAVA tests
     secrets:
       LAVATOKEN:
         required: true
 jobs:
+ report_pending:
+    name: Report tests as pending
+    if: ${{ inputs.report_sha != '' }}
+    runs-on: ubuntu-latest
+    permissions:
+      statuses: write
+    steps:
+      - name: Post pending status on the commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ inputs.report_sha }}
+          CONTEXT: ${{ inputs.status_context }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh api "repos/${GITHUB_REPOSITORY}/statuses/${SHA}" \
+            -f state=pending -f context="${CONTEXT}" \
+            -f description="Tests are running" -f target_url="${RUN_URL}"
+
  submit_lava:
     runs-on:
       group: GHA-AudioReach-SelfHosted-RG
@@ -204,3 +235,24 @@ jobs:
             echo "### $(basename "$f")" >> "$GITHUB_STEP_SUMMARY"
             cat "$f" >> "$GITHUB_STEP_SUMMARY"
           done
+
+ report_result:
+    name: Report tests result
+    needs: [report_pending, submit_lava]
+    if: ${{ always() && inputs.report_sha != '' }}
+    runs-on: ubuntu-latest
+    permissions:
+      statuses: write
+    steps:
+      - name: Post final status on the commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ inputs.report_sha }}
+          CONTEXT: ${{ inputs.status_context }}
+          RESULT: ${{ needs.submit_lava.result }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ "${RESULT}" = "success" ]; then STATE=success; else STATE=failure; fi
+          gh api "repos/${GITHUB_REPOSITORY}/statuses/${SHA}" \
+            -f state="${STATE}" -f context="${CONTEXT}" \
+            -f description="Tests finished: ${STATE}" -f target_url="${RUN_URL}"
