@@ -6,6 +6,13 @@ on:
     types:
       - completed
 
+# Cancel the LAVA tests of an older commit of a PR once any newer build
+# of the PR completes; the test workflow then cancels the LAVA job.
+# Runs for other events are never cancelled.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.workflow_run.event == 'pull_request' && format('{0}-{1}', github.event.workflow_run.head_repository.full_name, github.event.workflow_run.head_branch) || github.run_id }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
   actions: read
